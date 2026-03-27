@@ -1,0 +1,1103 @@
+# Complete Frontend Implementation Guide - Attendance Admin (All Settings)
+
+## Introduction
+
+This guide provides **everything** needed to build the frontend for the **full Attendance Admin module**: Day Type, Working Policy, Ruleset, Schedule Template, Attendance Group, and Employee Profile. It follows the same detailed format as the [Attendance Settings Frontend Guide](./FRONTEND_IMPLEMENTATION_GUIDE.md) (location/device) and aligns with the [Admin Setup documentation](./admin_setup.mdx).
+
+**Base URL:** `http://your-api.com/{app}/{user}`  
+**Required Headers (all requests):**
+```javascript
+{
+  "x-encrypted-key": "your_encrypted_key",
+  "x-encrypted-user": "your_encrypted_user",
+  "Content-Type": "application/json"
+}
+```
+
+---
+
+## Quick Reference – All Endpoints
+
+| Entity | Method | Endpoint | Purpose |
+|--------|--------|----------|---------|
+| **Day Type** | POST | `/admin/settings/day-type` | Create |
+| | GET | `/admin/settings/day-type?sid=` | List |
+| | PUT | `/admin/settings/day-type` | Update |
+| | DELETE | `/admin/settings/day-type?code=` | Delete (soft) |
+| **Working Policy** | POST | `/admin/settings/working-policy` | Create |
+| | GET | `/admin/settings/working-policy?sid=` | List |
+| | PUT | `/admin/settings/working-policy` | Update |
+| | DELETE | `/admin/settings/working-policy?code=` | Delete (hard) |
+| **Ruleset** | POST | `/admin/settings/ruleset` | Create |
+| | GET | `/admin/settings/ruleset?sid=` | List |
+| | PUT | `/admin/settings/ruleset` | Update |
+| | DELETE | `/admin/settings/ruleset?code=` | Delete (hard) |
+| **Schedule Template** | POST | `/admin/schedule` | Create |
+| | GET | `/admin/schedule?code=` | Get one |
+| | GET | `/admin/schedule/list?sid=` | List (light) |
+| | PUT | `/admin/schedule` | Update |
+| | DELETE | `/admin/schedule?code=` | Delete (hard) |
+| **Attendance Group** | POST | `/admin/group` | Create |
+| | GET | `/admin/group?code=` | Get one |
+| | GET | `/admin/group/list?sid=` | List |
+| | PUT | `/admin/group` | Update |
+| | DELETE | `/admin/group?code=` | Delete (hard) |
+| **Employee Profile** | GET | `/admin/settings/employee-attendance-profile?uid=&sid=` | Get one (detail) |
+| | PUT | `/admin/settings/employee-attendance-profile` | Create/Update |
+| | GET | `/admin/settings/employee-attendance-profile/list?sid=` | List (light) |
+| | DELETE | `/admin/settings/employee-attendance-profile?uid=&sid=` | Delete (hard) |
+
+---
+
+## Setup Flow & Dependency Order
+
+Configuration **must** follow this order (backend may auto-create some; see flows below):
+
+```
+1. Day Type (standalone)
+2. Working Policy (standalone)
+3. Ruleset (standalone)
+4. Schedule Template (standalone)
+5. Attendance Group (uses: Schedule + Ruleset + optional Day Type + OT Policy)
+6. Employee Profile (uses: Attendance Group; can override OT)
+```
+
+**Quick path:** You can create an **Attendance Group** first with only `sid`, `name`, `level`, `description`. The backend will auto-create a default Schedule Template and Ruleset for that org if they don’t exist. For full control, create Schedule and Ruleset (and optionally Day Type + Working Policy) first, then create the group.
+
+---
+
+## 1. Day Type
+
+**Purpose:** Define day categories (e.g. working day, rest day, public holiday) with flags: paid, overtime allowed, etc.  
+**Collection:** `attendance_day_types`
+
+### 1.1 Create Day Type
+
+**Endpoint:** `POST /admin/settings/day-type`
+
+**Request Body:**
+```json
+{
+  "sid": "0",
+  "level": "0",
+  "description": "Sunday and Saturday",
+  "name": "Working day",
+  "isWorkingDay": true,
+  "isPaid": true,
+  "allowOvertime": true,
+  "isActive": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Setting day type created successfully",
+  "data": {
+    "code": "DAYTYPE-FBAF72B2"
+  }
+}
+```
+
+---
+
+### 1.2 Get Day Type List
+
+**Endpoint:** `GET /admin/settings/day-type?sid={sid}`
+
+**Query:** `sid` (required) – Organization ID
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Setting day type fetched successfully",
+  "data": [
+    {
+      "code": "DAYTYPE-FBAF72B2",
+      "sid": "0",
+      "level": "0",
+      "description": "Sunday and Saturday",
+      "name": "Working day",
+      "isWorkingDay": true,
+      "isPaid": true,
+      "allowOvertime": true,
+      "isActive": 1,
+      "createdAt": "2026-01-28T03:06:14.347Z",
+      "updatedAt": "2026-01-28T03:06:14.347Z"
+    }
+  ]
+}
+```
+
+---
+
+### 1.3 Update Day Type
+
+**Endpoint:** `PUT /admin/settings/day-type`
+
+**Request Body:**
+```json
+{
+  "code": "DAYTYPE-FBAF72B2",
+  "sid": "0",
+  "level": "0",
+  "description": "Sunday and Saturday",
+  "name": "Working day",
+  "isWorkingDay": true,
+  "isPaid": true,
+  "allowOvertime": true,
+  "isActive": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Setting day type updated successfully",
+  "data": {
+    "code": "DAYTYPE-FBAF72B2"
+  }
+}
+```
+
+---
+
+### 1.4 Delete Day Type
+
+**Endpoint:** `DELETE /admin/settings/day-type?code={code}`
+
+**Query:** `code` (required) – Day type code
+
+**Success Response (200):** Soft delete (`is_active = 0`)
+```json
+{
+  "success": true,
+  "message": "Setting day type deleted successfully",
+  "data": {
+    "code": "DAYTYPE-FBAF72B2"
+  }
+}
+```
+
+---
+
+## 2. Working Policy (OT Policy)
+
+**Purpose:** Overtime rules (min minutes, rounding, max daily hours).  
+**Collection:** `attendance_working_policies`
+
+### 2.1 Create Working Policy
+
+**Endpoint:** `POST /admin/settings/working-policy`
+
+**Request Body:**
+```json
+{
+  "name": "Standard OT",
+  "description": "Standard overtime policy",
+  "isActive": true,
+  "allowed": true,
+  "rules": {
+    "min_minutes": 30,
+    "rounding_minutes": 15,
+    "max_daily_hours": 4
+  }
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Working policy created successfully",
+  "data": {
+    "code": "OT-A43E7D30"
+  }
+}
+```
+
+---
+
+### 2.2 Get Working Policy List
+
+**Endpoint:** `GET /admin/settings/working-policy?sid={sid}`
+
+**Query:** `sid` (required)
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Working policy fetched successfully",
+  "data": [
+    {
+      "code": "OT-A43E7D30",
+      "name": "Standard OT",
+      "description": "Standard overtime policy",
+      "isActive": 1,
+      "allowed": 1,
+      "rules": {
+        "min_minutes": 30,
+        "rounding_minutes": 15,
+        "max_daily_hours": 4
+      },
+      "createdAt": "2026-01-28T03:57:04.736Z",
+      "updatedAt": "2026-01-28T03:57:04.736Z"
+    }
+  ]
+}
+```
+
+---
+
+### 2.3 Update Working Policy
+
+**Endpoint:** `PUT /admin/settings/working-policy`
+
+**Request Body:**
+```json
+{
+  "code": "OT-A43E7D30",
+  "name": "Standard OT",
+  "description": "Updated description",
+  "isActive": true,
+  "allowed": true,
+  "rules": {
+    "min_minutes": 30,
+    "rounding_minutes": 15,
+    "max_daily_hours": 4
+  }
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Working policy updated successfully",
+  "data": {
+    "code": "OT-A43E7D30"
+  }
+}
+```
+
+---
+
+### 2.4 Delete Working Policy
+
+**Endpoint:** `DELETE /admin/settings/working-policy?code={code}`
+
+**Success Response (200):** Hard delete
+```json
+{
+  "success": true,
+  "message": "Working policy deleted successfully",
+  "data": {
+    "code": "OT-A43E7D30"
+  }
+}
+```
+
+---
+
+## 3. Ruleset
+
+**Purpose:** Punch behavior: max pairs per day, double-punch tolerance, flexible window.  
+**Collection:** `attendance_ruleset`
+
+### 3.1 Create Ruleset
+
+**Endpoint:** `POST /admin/settings/ruleset`
+
+**Request Body:**
+```json
+{
+  "sid": "1",
+  "name": "Standard Ruleset",
+  "description": "Standard attendance ruleset with default settings",
+  "flexible": false,
+  "flexWindowActive": false,
+  "flexWindow": {
+    "earliestIn": "07:00",
+    "latestIn": "10:00",
+    "requiredHours": 8.0
+  },
+  "maxPair": 1,
+  "doublePunchInSeconds": 120,
+  "isActive": true
+}
+```
+
+**Note:** If `flexWindowActive` is false, `flexWindow` can be null or omitted.
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Attendance ruleset created successfully",
+  "data": {
+    "code": "RULE-6B1DC417"
+  }
+}
+```
+
+---
+
+### 3.2 Get Ruleset List
+
+**Endpoint:** `GET /admin/settings/ruleset?sid={sid}`
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Attendance ruleset list fetched successfully",
+  "data": [
+    {
+      "code": "RULE-6B1DC417",
+      "sid": "1",
+      "name": "Standard Ruleset",
+      "description": "Standard attendance ruleset with default settings",
+      "flexible": false,
+      "flexWindowActive": false,
+      "flexWindow": {
+        "earliestIn": null,
+        "latestIn": null,
+        "requiredHours": 0
+      },
+      "maxPair": 1,
+      "doublePunchInSeconds": 120,
+      "isActive": 1,
+      "createdAt": "2026-02-03T03:43:49.387Z",
+      "updatedAt": "2026-02-03T03:43:49.387Z"
+    }
+  ]
+}
+```
+
+---
+
+### 3.3 Update Ruleset
+
+**Endpoint:** `PUT /admin/settings/ruleset`
+
+**Request Body:** Same structure as create, plus `"code": "RULE-6B1DC417"`.
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Attendance ruleset updated successfully",
+  "data": {
+    "code": "RULE-6B1DC417"
+  }
+}
+```
+
+---
+
+### 3.4 Delete Ruleset
+
+**Endpoint:** `DELETE /admin/settings/ruleset?code={code}`
+
+**Success Response (200):** Hard delete
+```json
+{
+  "success": true,
+  "message": "Attendance ruleset deleted successfully",
+  "data": {
+    "code": "RULE-6B1DC417"
+  }
+}
+```
+
+---
+
+## 4. Schedule Template
+
+**Purpose:** Weekly working hours (clock-in/out, break, optional day type and overrides per day).  
+**Collection:** `attendance_schedule_templates`  
+**Day keys:** `"0"` = Sunday … `"6"` = Saturday (name is server-side).
+
+### 4.1 Create Schedule Template
+
+**Endpoint:** `POST /admin/schedule`
+
+**Request Body:**
+```json
+{
+  "sid": "1",
+  "name": "Standard Working Hours",
+  "description": "Monday to Friday 8AM-5PM",
+  "isActive": true,
+  "schedule": {
+    "0": {
+      "enabled": true,
+      "clockIn": null,
+      "clockOut": null,
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    },
+    "1": {
+      "enabled": true,
+      "clockIn": "8.00",
+      "clockOut": "17.00",
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    },
+    "2": {
+      "enabled": true,
+      "clockIn": "8.00",
+      "clockOut": "17.00",
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    },
+    "3": {
+      "enabled": true,
+      "clockIn": "8.00",
+      "clockOut": "17.00",
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    },
+    "4": {
+      "enabled": true,
+      "clockIn": "8.00",
+      "clockOut": "17.00",
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    },
+    "5": {
+      "enabled": false,
+      "clockIn": null,
+      "clockOut": null,
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    },
+    "6": {
+      "enabled": false,
+      "clockIn": null,
+      "clockOut": null,
+      "breakIn": null,
+      "breakOut": null,
+      "dayType": null,
+      "isOverride": false,
+      "overrides": null
+    }
+  }
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Schedule template created successfully",
+  "data": {
+    "code": "SCHE-CB613D16",
+    "name": "Standard Working Hours",
+    "shift_span": 1
+  }
+}
+```
+
+**Note:** `shift_span`: 1 = normal day, 2 = night shift (clock-out next day).
+
+---
+
+### 4.2 Get Schedule Template (by code)
+
+**Endpoint:** `GET /admin/schedule?code={code}`
+
+**Success Response (200):** Full template with `days` (keys 0–6), `shift_span`, etc.
+
+---
+
+### 4.3 Get Schedule Template List (lightweight)
+
+**Endpoint:** `GET /admin/schedule/list?sid={sid}`
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Schedule template list fetched successfully",
+  "data": [
+    {
+      "code": "SCHE-CB613D16",
+      "name": "Standard Working Hours",
+      "sid": "1"
+    }
+  ]
+}
+```
+
+---
+
+### 4.4 Update Schedule Template
+
+**Endpoint:** `PUT /admin/schedule`
+
+**Request Body:**
+```json
+{
+  "code": "SCHE-CB613D16",
+  "schedule": {
+    "0": { "enabled": true, "clockIn": null, "clockOut": null, "breakIn": null, "breakOut": null, "dayType": null, "isOverride": false, "overrides": null },
+    "1": { "enabled": true, "clockIn": "8.00", "clockOut": "17.00", "breakIn": null, "breakOut": null, "dayType": null, "isOverride": false, "overrides": null },
+    "2": { "enabled": true, "clockIn": "8.00", "clockOut": "17.00", "breakIn": null, "breakOut": null, "dayType": null, "isOverride": true, "overrides": { "rulesetCode": "RULE-FLEXIBLE", "otPolicyCode": "OT-STANDARD" } },
+    "3": { "enabled": true, "clockIn": "8.00", "clockOut": "17.00", "breakIn": null, "breakOut": null, "dayType": null, "isOverride": false, "overrides": null },
+    "4": { "enabled": true, "clockIn": "8.00", "clockOut": "17.00", "breakIn": null, "breakOut": null, "dayType": null, "isOverride": false, "overrides": null },
+    "5": { "enabled": false, "clockIn": null, "clockOut": null, "breakIn": null, "breakOut": null, "dayType": null, "isOverride": false, "overrides": null },
+    "6": { "enabled": false, "clockIn": null, "clockOut": null, "breakIn": null, "breakOut": null, "dayType": null, "isOverride": false, "overrides": null }
+  }
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Attendance schedule updated successfully",
+  "data": {
+    "code": "SCHE-CB613D16",
+    "modifiedCount": 1,
+    "shift_span": 1
+  }
+}
+```
+
+---
+
+### 4.5 Delete Schedule Template
+
+**Endpoint:** `DELETE /admin/schedule?code={code}`
+
+**Success Response (200):** Hard delete
+```json
+{
+  "success": true,
+  "message": "Schedule template deleted successfully",
+  "data": {
+    "code": "SCHE-CB613D16",
+    "deletedCount": 1
+  }
+}
+```
+
+---
+
+## 5. Attendance Group
+
+**Purpose:** Group of employees sharing schedule + ruleset; optional day type and OT policy.  
+**Collection:** `attendance_groups`
+
+### 5.1 Create Attendance Group
+
+**Endpoint:** `POST /admin/group`
+
+**Request Body (minimal – backend can auto-create Schedule + Ruleset):**
+```json
+{
+  "sid": "1",
+  "name": "Group Guard 1st shift",
+  "level": "0",
+  "description": "Monday Wednesday Friday Enter 8am-8pm"
+}
+```
+
+**Request Body (full – when Schedule and Ruleset already exist):**
+```json
+{
+  "sid": "1",
+  "name": "Marketing Team",
+  "level": "1",
+  "description": "Marketing department group",
+  "rulesetCode": "RULE-6B1DC417",
+  "scheduleTemplateCode": "SCHE-1472842D",
+  "dayTypeCode": "DAYTYPE-FBAF72B2",
+  "otPolicyCode": "OT-A43E7D30"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Staff attendance group created successfully",
+  "data": {
+    "groupCode": "ATTGRP-5F1ADF54",
+    "name": "Group Guard 1st shift",
+    "scheduleTemplateCode": "SCHE-1472842D",
+    "rulesetCode": "RULE-6B1DC417"
+  }
+}
+```
+
+---
+
+### 5.2 Get Attendance Group (by code)
+
+**Endpoint:** `GET /admin/group?code={code}`
+
+**Success Response (200):** Full group document (camelCase).
+
+---
+
+### 5.3 Get Attendance Group List
+
+**Endpoint:** `GET /admin/group/list?sid={sid}`
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Attendance group list fetched successfully",
+  "data": [
+    {
+      "code": "ATTGRP-5F1ADF54",
+      "name": "Group Guard 1st shift",
+      "sid": "1",
+      "level": "0",
+      "description": "Monday Wednesday Friday Enter 8am-8pm",
+      "rulesetCode": "RULE-6B1DC417",
+      "scheduleTemplateCode": "SCHE-1472842D",
+      "dayTypeCode": null,
+      "otPolicyCode": null,
+      "isActive": 1,
+      "createdAt": "2026-02-05T08:37:09.631Z",
+      "updatedAt": "2026-02-05T08:37:09.631Z"
+    }
+  ]
+}
+```
+
+---
+
+### 5.4 Update Attendance Group
+
+**Endpoint:** `PUT /admin/group`
+
+**Request Body:**
+```json
+{
+  "code": "ATTGRP-5F1ADF54",
+  "sid": "1",
+  "name": "Group Guard 1st shift",
+  "level": "0",
+  "description": "Updated description",
+  "rulesetCode": "RULE-6B1DC417",
+  "scheduleTemplateCode": "SCHE-1472842D",
+  "dayTypeCode": null,
+  "otPolicyCode": "OT-A43E7D30",
+  "isActive": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Attendance group updated successfully",
+  "data": {
+    "code": "ATTGRP-5F1ADF54",
+    "name": "Group Guard 1st shift"
+  }
+}
+```
+
+---
+
+### 5.5 Delete Attendance Group
+
+**Endpoint:** `DELETE /admin/group?code={code}`
+
+**Success Response (200):** Hard delete
+```json
+{
+  "success": true,
+  "message": "Attendance group deleted successfully",
+  "data": {
+    "code": "ATTGRP-5F1ADF54",
+    "deletedCount": 1
+  }
+}
+```
+
+---
+
+## 6. Employee Attendance Profile
+
+**Purpose:** Link employee (`uid`, `sid`) to an attendance group; can override OT policy and flexible flag.  
+**Collection:** `attendance_profiles`  
+**Note:** No dedicated “create” – use **Update** with new `uid`/`sid` to create.
+
+### 6.1 Get Single Employee Profile (details)
+
+**Endpoint:** `GET /admin/settings/employee-attendance-profile?uid={uid}&sid={sid}`
+
+**Query:** `uid` (required), `sid` (required)
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Employee attendance profile retrieved successfully",
+  "data": {
+    "uid": "0183884743",
+    "sid": "1",
+    "attendanceGroupCode": "ATTGRP-5F1ADF54",
+    "override": {
+      "otPolicyCode": "OT-A43E7D30",
+      "flexible": false
+    },
+    "createdAt": "2026-02-03T10:18:08.206Z",
+    "updatedAt": "2026-02-03T10:18:08.206Z",
+    "attendanceGroup": {
+      "code": "ATTGRP-5F1ADF54",
+      "name": "Group Guard 1st shift",
+      "level": "0",
+      "description": "...",
+      "rulesetCode": "RULE-6B1DC417",
+      "scheduleTemplateCode": "SCHE-1472842D",
+      "dayTypeCode": null,
+      "otPolicyCode": null
+    },
+    "scheduleTemplate": { ... },
+    "workingPolicy": { ... }
+  }
+}
+```
+
+---
+
+### 6.2 Update Employee Profile (Create or Update)
+
+**Endpoint:** `PUT /admin/settings/employee-attendance-profile`
+
+**Request Body:**
+```json
+{
+  "uid": "0183884743",
+  "sid": "1",
+  "ot_policy_code": "OT-A43E7D30",
+  "attendance_group_code": "ATTGRP-5F1ADF54"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Employee attendance profile updated successfully",
+  "data": {
+    "uid": "0183884743"
+  }
+}
+```
+
+**Note:** If profile does not exist, this creates it. Backend validates user exists and that `attendance_group_code` and `ot_policy_code` (if provided) exist and are active.
+
+---
+
+### 6.3 Get Employee Profile List (lightweight)
+
+**Endpoint:** `GET /admin/settings/employee-attendance-profile/list?sid={sid}`
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Employee attendance profiles retrieved successfully",
+  "data": [
+    {
+      "uid": "0183884743",
+      "sid": "1",
+      "attendanceGroupCode": "ATTGRP-5F1ADF54",
+      "attendanceGroupName": "Group Guard 1st shift",
+      "createdAt": "2026-02-03T10:18:08.206Z",
+      "updatedAt": "2026-02-03T10:18:08.206Z"
+    }
+  ]
+}
+```
+
+---
+
+### 6.4 Delete Employee Profile
+
+**Endpoint:** `DELETE /admin/settings/employee-attendance-profile?uid={uid}&sid={sid}`
+
+**Success Response (200):** Hard delete
+```json
+{
+  "success": true,
+  "message": "Employee attendance profile deleted successfully",
+  "data": {
+    "uid": "0183884743",
+    "sid": "1"
+  }
+}
+```
+
+---
+
+## Complete User Flows (Frontend)
+
+### Flow A: Full Setup (Step-by-Step)
+
+**Goal:** Configure from scratch in dependency order.
+
+```
+Step 1: Create Day Type(s)
+  POST /admin/settings/day-type
+  Body: { sid, name, description, isWorkingDay, isPaid, allowOvertime, isActive }
+  → Save returned "code" (e.g. DAYTYPE-XXX)
+
+Step 2: Create Working Policy (OT)
+  POST /admin/settings/working-policy
+  Body: { name, description, isActive, allowed, rules }
+  → Save "code" (e.g. OT-XXX)
+
+Step 3: Create Ruleset
+  POST /admin/settings/ruleset
+  Body: { sid, name, description, flexible, flexWindowActive, flexWindow?, maxPair, doublePunchInSeconds, isActive }
+  → Save "code" (e.g. RULE-XXX)
+
+Step 4: Create Schedule Template
+  POST /admin/schedule
+  Body: { sid, name, description, isActive, schedule: { "0".."6": DaySchedule } }
+  → Save "code" (e.g. SCHE-XXX)
+
+Step 5: Create Attendance Group
+  POST /admin/group
+  Body: {
+    sid, name, level, description,
+    rulesetCode: "RULE-XXX",
+    scheduleTemplateCode: "SCHE-XXX",
+    dayTypeCode: "DAYTYPE-XXX" (optional),
+    otPolicyCode: "OT-XXX" (optional)
+  }
+  → Save "groupCode" (e.g. ATTGRP-XXX)
+
+Step 6: Assign Employee to Group
+  PUT /admin/settings/employee-attendance-profile
+  Body: { uid, sid, attendance_group_code: "ATTGRP-XXX", ot_policy_code: "OT-XXX" (optional) }
+```
+
+**UI suggestion:** Wizard with 6 steps; each step shows form + “Next” / “Back”. Final step shows summary and “Complete Setup”.
+
+---
+
+### Flow B: Quick Create (Group First)
+
+**Goal:** Let backend auto-create Schedule + Ruleset.
+
+```
+Step 1: Create Group (minimal)
+  POST /admin/group
+  Body: { sid: "1", name: "Default Group", level: "0", description: "" }
+  → Backend creates default Schedule Template + Ruleset if missing
+  → Response: groupCode, scheduleTemplateCode, rulesetCode
+
+Step 2: (Optional) Edit schedule/ruleset
+  GET /admin/schedule?code=<scheduleTemplateCode>
+  PUT /admin/schedule with desired weekly schedule
+
+  GET /admin/settings/ruleset?sid=1
+  PUT /admin/settings/ruleset with desired ruleset code and fields
+
+Step 3: Assign employees
+  PUT /admin/settings/employee-attendance-profile
+  Body: { uid, sid, attendance_group_code: "<groupCode>" }
+```
+
+**UI suggestion:** “Quick setup” button → single form (org + group name) → then “Edit schedule” / “Edit rules” links to full editors.
+
+---
+
+### Flow C: Edit Existing Group
+
+**Goal:** Change schedule, ruleset, or OT policy for a group.
+
+```
+Step 1: Get group
+  GET /admin/group?code=ATTGRP-XXX
+
+Step 2: Update group
+  PUT /admin/group
+  Body: { code, sid, name, level, description, rulesetCode, scheduleTemplateCode, dayTypeCode?, otPolicyCode?, isActive }
+
+  (To change schedule hours: GET/PUT /admin/schedule for scheduleTemplateCode)
+  (To change rules: GET/PUT /admin/settings/ruleset for rulesetCode)
+```
+
+---
+
+### Flow D: Assign / Reassign Employee
+
+**Goal:** Set or change an employee’s group and optional OT override.
+
+```
+Step 1: Get list of groups
+  GET /admin/group/list?sid=1
+
+Step 2: (Optional) Get list of OT policies
+  GET /admin/settings/working-policy?sid=1
+
+Step 3: Create or update profile
+  PUT /admin/settings/employee-attendance-profile
+  Body: {
+    uid: "user123",
+    sid: "1",
+    attendance_group_code: "ATTGRP-XXX",
+    ot_policy_code: "OT-XXX"  // optional override
+  }
+```
+
+**UI suggestion:** Employee search/select → dropdown “Attendance group” → optional “OT policy override” → Save.
+
+---
+
+## UI/UX Recommendations
+
+### 1. Left Menu / Tabs (by entity)
+
+- Day Types  
+- Working Policies (OT)  
+- Rulesets  
+- Schedule Templates  
+- Attendance Groups  
+- Employee Profiles  
+
+Each section: list view + “Add” → form (create/edit) with fields as in request bodies above.
+
+### 2. Schedule Template UI
+
+- **Weekly grid:** 7 rows (Sun–Sat); columns: Enabled, Clock In, Clock Out, Break In, Break Out, Day Type (dropdown), Override (checkbox); if Override, show Ruleset + OT Policy dropdowns.
+- **Time inputs:** Use time pickers; send as "8.00" or "08:00" etc. per backend expectation.
+- **Night shift:** If clockOut < clockIn, backend will set `shift_span: 2`; show a short note in UI.
+
+### 3. Attendance Group form
+
+- **Dropdowns:** Schedule Template (from list), Ruleset (from list), Day Type (optional), OT Policy (optional).
+- **Quick create:** If “Create default schedule/ruleset” is chosen, call only POST group with minimal body and show success with created codes.
+
+### 4. Employee Profile
+
+- **List:** Table with uid, sid, group name, OT override (if any), actions (View, Edit, Delete).
+- **Detail:** GET by uid+sid; show group name, schedule summary, and override section (OT policy dropdown, flexible checkbox if applicable).
+- **Edit:** Same as “Update” body; ensure group and OT (if filled) exist before submit.
+
+### 5. Validation (frontend)
+
+- **Day type:** Required name, at least one of isWorkingDay/isPaid/allowOvertime meaningful.
+- **Working policy:** `rules.min_minutes`, `rounding_minutes`, `max_daily_hours` present and valid.
+- **Ruleset:** If flexWindowActive then flexWindow (earliestIn, latestIn, requiredHours) required; maxPair ≥ 1; doublePunchInSeconds ≥ 0.
+- **Schedule:** Keys "0"–"6" all present; if enabled, clockIn/clockOut format valid.
+- **Group:** scheduleTemplateCode and rulesetCode required when not using “quick create”; optional codes must exist if provided.
+- **Employee profile:** attendance_group_code required; user (uid) and group must exist (backend will reject otherwise).
+
+---
+
+## Error Handling (Common)
+
+- **404 “Day type not found”** (update/delete): Refresh list; show “No longer exists”.
+- **404 “Working policy not found”**: Same.
+- **404 “Attendance ruleset not found”**: Same.
+- **404 “Schedule template not found”**: Same.
+- **404 “Attendance group not found”**: Same.
+- **404 “User not found”** (employee profile): Check uid/sid; show “Invalid employee”.
+- **404 “Attendance group not found”** (profile): Group was deleted; ask user to pick another group.
+- **400 “Device code already exists”**: Only for device API; for admin settings, any 400: show message, highlight invalid fields.
+
+Always surface backend `message` in a toast or inline error.
+
+---
+
+## API Service Example (JavaScript)
+
+```javascript
+const BASE = 'http://your-api.com/{app}/{user}';
+const headers = {
+  'x-encrypted-key': localStorage.getItem('encrypted_key'),
+  'x-encrypted-user': localStorage.getItem('encrypted_user'),
+  'Content-Type': 'application/json'
+};
+
+export const adminAPI = {
+  // Day Type
+  createDayType: (data) => fetch(`${BASE}/admin/settings/day-type`, { method: 'POST', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  getDayTypes: (sid) => fetch(`${BASE}/admin/settings/day-type?sid=${sid}`, { headers }).then(r => r.json()),
+  updateDayType: (data) => fetch(`${BASE}/admin/settings/day-type`, { method: 'PUT', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  deleteDayType: (code) => fetch(`${BASE}/admin/settings/day-type?code=${code}`, { method: 'DELETE', headers }).then(r => r.json()),
+
+  // Working Policy
+  createWorkingPolicy: (data) => fetch(`${BASE}/admin/settings/working-policy`, { method: 'POST', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  getWorkingPolicies: (sid) => fetch(`${BASE}/admin/settings/working-policy?sid=${sid}`, { headers }).then(r => r.json()),
+  updateWorkingPolicy: (data) => fetch(`${BASE}/admin/settings/working-policy`, { method: 'PUT', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  deleteWorkingPolicy: (code) => fetch(`${BASE}/admin/settings/working-policy?code=${code}`, { method: 'DELETE', headers }).then(r => r.json()),
+
+  // Ruleset
+  createRuleset: (data) => fetch(`${BASE}/admin/settings/ruleset`, { method: 'POST', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  getRulesets: (sid) => fetch(`${BASE}/admin/settings/ruleset?sid=${sid}`, { headers }).then(r => r.json()),
+  updateRuleset: (data) => fetch(`${BASE}/admin/settings/ruleset`, { method: 'PUT', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  deleteRuleset: (code) => fetch(`${BASE}/admin/settings/ruleset?code=${code}`, { method: 'DELETE', headers }).then(r => r.json()),
+
+  // Schedule
+  createSchedule: (data) => fetch(`${BASE}/admin/schedule`, { method: 'POST', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  getSchedule: (code) => fetch(`${BASE}/admin/schedule?code=${code}`, { headers }).then(r => r.json()),
+  getScheduleList: (sid) => fetch(`${BASE}/admin/schedule/list?sid=${sid}`, { headers }).then(r => r.json()),
+  updateSchedule: (data) => fetch(`${BASE}/admin/schedule`, { method: 'PUT', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  deleteSchedule: (code) => fetch(`${BASE}/admin/schedule?code=${code}`, { method: 'DELETE', headers }).then(r => r.json()),
+
+  // Group
+  createGroup: (data) => fetch(`${BASE}/admin/group`, { method: 'POST', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  getGroup: (code) => fetch(`${BASE}/admin/group?code=${code}`, { headers }).then(r => r.json()),
+  getGroupList: (sid) => fetch(`${BASE}/admin/group/list?sid=${sid}`, { headers }).then(r => r.json()),
+  updateGroup: (data) => fetch(`${BASE}/admin/group`, { method: 'PUT', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  deleteGroup: (code) => fetch(`${BASE}/admin/group?code=${code}`, { method: 'DELETE', headers }).then(r => r.json()),
+
+  // Employee Profile
+  getEmployeeProfile: (uid, sid) => fetch(`${BASE}/admin/settings/employee-attendance-profile?uid=${uid}&sid=${sid}`, { headers }).then(r => r.json()),
+  updateEmployeeProfile: (data) => fetch(`${BASE}/admin/settings/employee-attendance-profile`, { method: 'PUT', headers, body: JSON.stringify(data) }).then(r => r.json()),
+  getEmployeeProfileList: (sid) => fetch(`${BASE}/admin/settings/employee-attendance-profile/list?sid=${sid}`, { headers }).then(r => r.json()),
+  deleteEmployeeProfile: (uid, sid) => fetch(`${BASE}/admin/settings/employee-attendance-profile?uid=${uid}&sid=${sid}`, { method: 'DELETE', headers }).then(r => r.json())
+};
+```
+
+---
+
+## Summary Checklist for Frontend
+
+- [ ] **Day Type:** Create, List, Update, Delete – all request/response shapes as above.
+- [ ] **Working Policy:** Create, List, Update, Delete – with `rules` object.
+- [ ] **Ruleset:** Create, List, Update, Delete – with optional `flexWindow`.
+- [ ] **Schedule Template:** Create, Get, List, Update, Delete – weekly grid 0–6, overrides per day.
+- [ ] **Attendance Group:** Create (minimal or full), Get, List, Update, Delete – dropdowns for schedule, ruleset, day type, OT.
+- [ ] **Employee Profile:** Get one, List, Update (create/update), Delete – ensure group (and OT if used) exist.
+- [ ] **Flows:** Full setup wizard (A), quick group (B), edit group (C), assign employee (D).
+- [ ] **Validation:** Per-entity rules as in “Validation (frontend)”.
+- [ ] **Errors:** Map 404/400 to user-friendly messages and field highlights.
+
+This document, together with [FRONTEND_IMPLEMENTATION_GUIDE.md](./FRONTEND_IMPLEMENTATION_GUIDE.md) (attendance settings/location/device), gives you a single place to implement the **entire** Attendance Admin frontend with correct endpoints, request/response structures, and user-friendly flows.
