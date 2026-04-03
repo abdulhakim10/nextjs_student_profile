@@ -195,8 +195,6 @@ export function AIChatPanel() {
           content: t('actionSkipped'),
           timestamp: new Date(),
           quickReplies: [
-            '[GO:/admin/employee-profiles] Employee Profiles',
-            '[GO:/admin/attendance] Attendance Settings',
             '[GO:/dashboard] Go to Dashboard',
           ],
         });

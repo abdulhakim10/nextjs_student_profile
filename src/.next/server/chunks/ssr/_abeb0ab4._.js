@@ -1,3 +1,0 @@
-module.exports=[67900,a=>{"use strict";let b=(0,a.i(70106).default)("building-2",[["path",{d:"M10 12h4",key:"a56b0p"}],["path",{d:"M10 8h4",key:"1sr2af"}],["path",{d:"M14 21v-3a2 2 0 0 0-4 0v3",key:"1rgiei"}],["path",{d:"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2",key:"secmi2"}],["path",{d:"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16",key:"16ra0t"}]]);a.s(["Building2",()=>b],67900)},78460,a=>{"use strict";a.i(87924),a.i(72131),a.i(50944);let b=Error("Cannot find module '@/stores/auth.store'");throw b.code="MODULE_NOT_FOUND",b}];
-
-//# sourceMappingURL=_abeb0ab4._.js.map

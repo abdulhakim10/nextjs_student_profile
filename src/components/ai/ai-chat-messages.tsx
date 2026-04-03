@@ -22,10 +22,10 @@ interface AIChatMessagesProps {
   onSuggestionClick?: (text: string) => void;
 }
 
-const QUESTION_ICONS = [CalendarCheck, HelpCircle, Clock, FileBarChart, Search, LayoutGrid, Settings, FileDown] as const;
-const QUESTION_KEYS = ['todaySummary', 'whoIsAbsent', 'lateEmployees', 'monthlyReport', 'searchEmployee', 'listGroups', 'viewSettings', 'exportExcel'] as const;
-const ACTION_ICONS = [Users, CalendarCheck, UserPlus, Timer, Zap, MapPin, BookOpen] as const;
-const ACTION_KEYS = ['createGroup', 'createSchedule', 'assignEmployees', 'setupOT', 'setAttendanceMode', 'addLocation', 'setupGuide'] as const;
+const QUESTION_ICONS = [] as const;
+const QUESTION_KEYS = [] as const;
+const ACTION_ICONS = [] as const;
+const ACTION_KEYS = [] as const;
 
 export function AIChatMessages({
   messages,

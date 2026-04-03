@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
@@ -15,42 +15,21 @@ import {
 import { NAV_ITEMS } from '@/config/navigation';
 import { useTranslation } from '@/i18n';
 import { useAIChatStore } from '@/stores/ai-chat.store';
-import { BRANCH_STORAGE_KEY } from '@/hooks/use-branch-selector';
-import { userService } from '@/services/user.service';
-import type { BranchListItem } from '@/types';
 import {
   MessageSquare,
-  Building2,
   Sun,
   Moon,
   ArrowRight,
-  Wand2,
 } from 'lucide-react';
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
-  const [branches, setBranches] = useState<BranchListItem[]>([]);
   const router = useRouter();
   const { setTheme, theme } = useTheme();
-  const { setOpen: setAIChatOpen, setPendingPrompt } = useAIChatStore();
+  const { setOpen: setAIChatOpen } = useAIChatStore();
   const { t: tNav } = useTranslation('navigation');
   const { t: tCommon } = useTranslation('common');
   const { t: tCmd } = useTranslation('commandPalette');
-  const { t: tAi } = useTranslation('ai');
-
-  const aiQuestions = [
-    { label: tAi('showTodayAttendance'), prompt: "Show me today's attendance summary" },
-    { label: tAi('whoIsAbsent'), prompt: 'Who is absent today?' },
-    { label: tAi('weeklyReport'), prompt: 'Show me the weekly attendance report' },
-    { label: tAi('lateEmployees'), prompt: 'Who are the late employees today?' },
-    { label: tAi('listGroups'), prompt: 'List all attendance groups' },
-  ];
-
-  const aiActions = [
-    { label: tAi('createGroup'), prompt: 'Create a new attendance group' },
-    { label: tAi('createSchedule'), prompt: 'Create a schedule template' },
-    { label: tAi('setupGuide'), prompt: 'Guide me through the setup' },
-  ];
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -63,38 +42,14 @@ export function CommandPalette() {
     return () => document.removeEventListener('keydown', down);
   }, []);
 
-  const fetchBranches = useCallback(async () => {
-    try {
-      const res = await userService.getBranchList();
-      if (res.success && res.data?.length) {
-        setBranches(res.data);
-      }
-    } catch {
-      // Silently fail
-    }
-  }, []);
-
-  useEffect(() => {
-    if (open && branches.length === 0) {
-      fetchBranches();
-    }
-  }, [open, branches.length, fetchBranches]);
-
   const handleNavigation = (href: string) => {
     setOpen(false);
     router.push(href);
   };
 
-  const handleAIPrompt = (prompt: string) => {
+  const handleOpenAI = () => {
     setOpen(false);
     setAIChatOpen(true);
-    setPendingPrompt(prompt);
-  };
-
-  const handleBranchSwitch = (sid: string) => {
-    setOpen(false);
-    sessionStorage.setItem(BRANCH_STORAGE_KEY, sid);
-    router.push('/dashboard');
   };
 
   const handleThemeToggle = () => {
@@ -138,51 +93,10 @@ export function CommandPalette() {
 
         <CommandSeparator />
 
-        <CommandGroup heading={`${tCmd('aiAssistant')} — ${tAi('questionsTitle')}`}>
-          {aiQuestions.map((item) => (
-            <CommandItem
-              key={item.label}
-              onSelect={() => handleAIPrompt(item.prompt)}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              <span>{item.label}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-
-        <CommandGroup heading={`${tCmd('aiAssistant')} — ${tAi('actionsTitle')}`}>
-          {aiActions.map((item) => (
-            <CommandItem
-              key={item.label}
-              onSelect={() => handleAIPrompt(item.prompt)}
-            >
-              <Wand2 className="mr-2 h-4 w-4" />
-              <span>{item.label}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-
-        <CommandSeparator />
-
-        <CommandGroup heading={tCmd('switchBranch')}>
-          {branches.map((branch) => (
-            <CommandItem
-              key={branch.sid}
-              onSelect={() => handleBranchSwitch(branch.sid)}
-            >
-              <Building2 className="mr-2 h-4 w-4" />
-              <span>{branch.name}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-
-        <CommandSeparator />
-
         <CommandGroup heading={tCmd('actions')}>
-          <CommandItem onSelect={() => handleNavigation('/admin/setup')}>
-            <Wand2 className="mr-2 h-4 w-4" />
-            <span>{tNav('setupGuide')}</span>
-            <ArrowRight className="ml-auto h-3 w-3 text-muted-foreground" />
+          <CommandItem onSelect={handleOpenAI}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            <span>{tCmd('aiAssistant')}</span>
           </CommandItem>
           <CommandItem onSelect={handleThemeToggle}>
             {theme === 'dark' ? (

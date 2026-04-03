@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Attendance Admin Dashboard',
-  description: 'Attendance management system for organizations',
+  title: 'Admin Dashboard',
+  description: 'Admin dashboard base structure',
 };
 
 export default function RootLayout({

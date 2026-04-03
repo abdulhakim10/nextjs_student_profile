@@ -1,3 +1,7 @@
+/**
+ * API Proxy Route — Routes requests to the correct backend service.
+ * Customize the path matchers and base URLs for your module's backends.
+ */
 import { NextRequest, NextResponse } from 'next/server';
 
 const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || 'https://aws01.awfatech.com';

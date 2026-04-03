@@ -34,7 +34,7 @@ export function AppHeader() {
   const pathname = usePathname();
   const breadcrumbs = generateBreadcrumbs(pathname);
   const { t } = useTranslation('common');
-  const { t: tDash } = useTranslation('dashboard');
+  const { t: tAi } = useTranslation('ai');
   const { setTheme, theme } = useTheme();
   const toggleAI = useAIChatStore((s) => s.togglePanel);
 
@@ -75,7 +75,7 @@ export function AppHeader() {
         >
           <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-purple-500 to-primary opacity-0 blur-sm group-hover:opacity-40 transition-opacity" />
           <Sparkles className="h-3.5 w-3.5 relative" />
-          <span className="relative hidden sm:inline">{tDash('aiAssistant')}</span>
+          <span className="relative hidden sm:inline">{tAi('assistant')}</span>
           {/* Online pulse */}
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
