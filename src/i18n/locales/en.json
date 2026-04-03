@@ -1,0 +1,73 @@
+{
+  "common": {
+    "search": "Search...",
+    "settings": "Settings",
+    "logout": "Log out",
+    "loading": "Loading...",
+    "noData": "No data",
+    "all": "All",
+    "at": "at",
+    "of": "of",
+    "next": "next",
+    "user": "User",
+    "language": "Language",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "noResults": "No results found.",
+    "error": "Error",
+    "unknownError": "Unknown error",
+    "showingEntries": "Showing {start} to {end} of {total} entries",
+    "clear": "Clear",
+    "previous": "Previous",
+    "date": "Date",
+    "name": "Name",
+    "actions": "Actions"
+  },
+  "navigation": {
+    "label": "Navigation",
+    "dashboard": "Dashboard"
+  },
+  "sidebar": {
+    "appName": "Admin Dashboard",
+    "dashboard": "Dashboard"
+  },
+  "greeting": {
+    "morning": "Good Morning",
+    "afternoon": "Good Afternoon",
+    "evening": "Good Evening"
+  },
+  "ai": {
+    "assistant": "AI Assistant",
+    "description": "Your AI-powered assistant",
+    "greeting": "Hi! I'm your AI Assistant",
+    "helpText": "I can help you with questions and tasks.",
+    "thinking": "Thinking...",
+    "clearChat": "Clear chat",
+    "placeholder": "Ask me anything...",
+    "actionRequired": "Action Required",
+    "executing": "Executing...",
+    "completed": "Completed",
+    "executingAction": "Executing action...",
+    "cancelled": "Cancelled",
+    "skip": "Skip for now",
+    "skipped": "Skipped",
+    "actionSkipped": "No problem! You can do this later from the pages below.",
+    "actionCancelled": "Action cancelled. Let me know if you need anything else.",
+    "errorPrefix": "Sorry, I encountered an error:",
+    "errorRetry": "Please try again.",
+    "actionFailed": "Failed to execute action:",
+    "downloaded": "Downloaded automatically",
+    "questionsTitle": "Questions",
+    "questionsSubtitle": "Ask about your data",
+    "actionsTitle": "Actions",
+    "actionsSubtitle": "Manage your system"
+  },
+  "commandPalette": {
+    "placeholder": "Type a command or search...",
+    "navigation": "Navigation",
+    "aiAssistant": "AI Assistant",
+    "actions": "Actions",
+    "toggleLight": "Toggle Light Mode",
+    "toggleDark": "Toggle Dark Mode"
+  }
+}

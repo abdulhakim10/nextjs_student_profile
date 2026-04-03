@@ -1,0 +1,73 @@
+{
+  "common": {
+    "search": "Cari...",
+    "settings": "Tetapan",
+    "logout": "Log Keluar",
+    "loading": "Memuatkan...",
+    "noData": "Tiada data",
+    "all": "Semua",
+    "at": "pada",
+    "of": "daripada",
+    "next": "seterusnya",
+    "user": "Pengguna",
+    "language": "Bahasa",
+    "confirm": "Sahkan",
+    "cancel": "Batal",
+    "noResults": "Tiada hasil ditemui.",
+    "error": "Ralat",
+    "unknownError": "Ralat tidak diketahui",
+    "showingEntries": "Menunjukkan {start} hingga {end} daripada {total} entri",
+    "clear": "Kosongkan",
+    "previous": "Sebelumnya",
+    "date": "Tarikh",
+    "name": "Nama",
+    "actions": "Tindakan"
+  },
+  "navigation": {
+    "label": "Navigasi",
+    "dashboard": "Papan Pemuka"
+  },
+  "sidebar": {
+    "appName": "Papan Pemuka Pentadbir",
+    "dashboard": "Papan Pemuka"
+  },
+  "greeting": {
+    "morning": "Selamat Pagi",
+    "afternoon": "Selamat Petang",
+    "evening": "Selamat Malam"
+  },
+  "ai": {
+    "assistant": "Pembantu AI",
+    "description": "Pembantu berkuasa AI anda",
+    "greeting": "Hai! Saya Pembantu AI anda",
+    "helpText": "Saya boleh bantu dengan soalan dan tugasan.",
+    "thinking": "Sedang berfikir...",
+    "clearChat": "Padam perbualan",
+    "placeholder": "Tanya saya apa sahaja...",
+    "actionRequired": "Tindakan Diperlukan",
+    "executing": "Melaksanakan...",
+    "completed": "Selesai",
+    "executingAction": "Melaksanakan tindakan...",
+    "cancelled": "Dibatalkan",
+    "skip": "Langkau buat masa ini",
+    "skipped": "Dilangkau",
+    "actionSkipped": "Tiada masalah! Anda boleh lakukan ini kemudian dari halaman di bawah.",
+    "actionCancelled": "Tindakan dibatalkan. Beritahu saya jika anda perlukan bantuan lain.",
+    "errorPrefix": "Maaf, saya menghadapi ralat:",
+    "errorRetry": "Sila cuba lagi.",
+    "actionFailed": "Gagal melaksanakan tindakan:",
+    "downloaded": "Dimuat turun secara automatik",
+    "questionsTitle": "Soalan",
+    "questionsSubtitle": "Tanya tentang data anda",
+    "actionsTitle": "Tindakan",
+    "actionsSubtitle": "Urus sistem anda"
+  },
+  "commandPalette": {
+    "placeholder": "Taip arahan atau cari...",
+    "navigation": "Navigasi",
+    "aiAssistant": "Pembantu AI",
+    "actions": "Tindakan",
+    "toggleLight": "Tukar ke Mod Cerah",
+    "toggleDark": "Tukar ke Mod Gelap"
+  }
+}
