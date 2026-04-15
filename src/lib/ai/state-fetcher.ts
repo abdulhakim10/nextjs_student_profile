@@ -13,6 +13,8 @@
  *   forceLogout() on the frontend.
  */
 
+import { UTILITIES_BASE_URL, API_VERSION, DEFAULT_APP } from './constants';
+
 // ---------------------------------------------------------------------------
 // Error — Thrown on 401 to signal the chat route to return 401 to client
 // ---------------------------------------------------------------------------
@@ -41,15 +43,38 @@ export interface SystemState {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+async function fetchJson<T>(url: string, headers: Record<string, string>): Promise<T | null> {
+  try {
+    const res = await fetch(url, { headers, cache: 'no-store' });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data ?? null;
+  } catch (err) {
+    if (err instanceof UnauthorizedError) throw err;
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Cache — 30s TTL to avoid redundant fetches during agentic loops
 // ---------------------------------------------------------------------------
 
-interface CacheEntry {
+interface StateCacheEntry {
   state: SystemState;
   timestamp: number;
 }
 
-const stateCache = new Map<string, CacheEntry>();
+interface BranchCacheEntry {
+  branches: Array<{ sid: string; name: string }>;
+  timestamp: number;
+}
+
+const stateCache = new Map<string, StateCacheEntry>();
+const branchCache = new Map<string, BranchCacheEntry>();
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
 /**
@@ -65,7 +90,7 @@ export function invalidateStateCache(sid?: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Main Fetcher
+// Main Fetcher — System State
 // ---------------------------------------------------------------------------
 
 /**
@@ -85,7 +110,7 @@ export async function fetchSystemState(
   // Add your backend fetch calls here.
   // Example:
   // const [items] = await Promise.all([
-  //   fetchJson<NamedEntity[]>(apiUrl(`/admin/items?sid=${sid}`), headers),
+  //   fetchJson<NamedEntity[]>(apiUrl(API_BASE_URL, `/admin/items?sid=${sid}`), headers),
   // ]);
 
   const state: SystemState = {
@@ -96,4 +121,30 @@ export async function fetchSystemState(
   stateCache.set(sid, { state, timestamp: Date.now() });
 
   return state;
+}
+
+// ---------------------------------------------------------------------------
+// Branch Fetcher — Shared utility for branch list
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches the branch list from the utilities API. Cached with 30s TTL.
+ */
+export async function fetchBranches(
+  authHeaders: Record<string, string>,
+): Promise<Array<{ sid: string; name: string }>> {
+  const cacheKey = 'branches';
+  const cached = branchCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.branches;
+  }
+
+  const headers = { 'Content-Type': 'application/json', ...authHeaders };
+  const url = `${UTILITIES_BASE_URL}/api/${API_VERSION}/utilities/${DEFAULT_APP}/list/branch`;
+
+  const branches = await fetchJson<Array<{ sid: string; name: string }>>(url, headers);
+  const result = branches ?? [];
+
+  branchCache.set(cacheKey, { branches: result, timestamp: Date.now() });
+  return result;
 }

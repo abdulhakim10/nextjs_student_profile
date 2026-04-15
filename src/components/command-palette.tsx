@@ -26,10 +26,17 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { setTheme, theme } = useTheme();
-  const { setOpen: setAIChatOpen } = useAIChatStore();
+  const { setOpen: setAIChatOpen, setPendingPrompt } = useAIChatStore();
   const { t: tNav } = useTranslation('navigation');
   const { t: tCommon } = useTranslation('common');
   const { t: tCmd } = useTranslation('commandPalette');
+  const { t: tAi } = useTranslation('ai');
+
+  const aiSuggestions = [
+    { label: tAi('listUsers'), prompt: 'List all users' },
+    { label: tAi('howToUse'), prompt: 'How do I use this dashboard?' },
+    { label: tAi('whatCanYouDo'), prompt: 'What can you do?' },
+  ];
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -47,9 +54,10 @@ export function CommandPalette() {
     router.push(href);
   };
 
-  const handleOpenAI = () => {
+  const handleAIPrompt = (prompt: string) => {
     setOpen(false);
     setAIChatOpen(true);
+    setPendingPrompt(prompt);
   };
 
   const handleThemeToggle = () => {
@@ -57,7 +65,6 @@ export function CommandPalette() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  // Flatten nav items into a searchable list
   const navItems = NAV_ITEMS.flatMap((item) => {
     if (item.children) {
       return item.children.map((child) => ({
@@ -93,11 +100,21 @@ export function CommandPalette() {
 
         <CommandSeparator />
 
+        <CommandGroup heading={tCmd('aiAssistant')}>
+          {aiSuggestions.map((item) => (
+            <CommandItem
+              key={item.label}
+              onSelect={() => handleAIPrompt(item.prompt)}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              <span>{item.label}</span>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+
+        <CommandSeparator />
+
         <CommandGroup heading={tCmd('actions')}>
-          <CommandItem onSelect={handleOpenAI}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            <span>{tCmd('aiAssistant')}</span>
-          </CommandItem>
           <CommandItem onSelect={handleThemeToggle}>
             {theme === 'dark' ? (
               <Sun className="mr-2 h-4 w-4" />

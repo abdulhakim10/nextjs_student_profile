@@ -95,14 +95,29 @@ async function authFetch(body: Record<string, unknown>): Promise<AIChatResponse>
 // Public API
 // ---------------------------------------------------------------------------
 
+/** Read appcode data from Zustand persisted storage for email branding. */
+function getAppcodeInfo(): { customer?: string; clientLogo?: string } {
+  try {
+    const raw = localStorage.getItem('auth-storage');
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    const appcode = parsed?.state?.appcodeData;
+    if (!appcode) return {};
+    return { customer: appcode.customer, clientLogo: appcode.client_logo };
+  } catch {
+    return {};
+  }
+}
+
 export const aiService = {
   /** Send a user message to the AI assistant */
   sendMessage: (
     messages: ChatMessage[],
     sid: string,
-    branchName?: string
+    branchName?: string,
+    locale?: string
   ): Promise<AIChatResponse> => {
-    return authFetch({ messages, sid, branchName });
+    return authFetch({ messages, sid, branchName, locale, ...getAppcodeInfo() });
   },
 
   /** Confirm a pending write tool action (user clicked "Confirm" on action card) */
@@ -112,13 +127,16 @@ export const aiService = {
     branchName: string | undefined,
     toolName: string,
     toolInput: Record<string, unknown>,
-    toolUseId: string
+    toolUseId: string,
+    locale?: string
   ): Promise<AIChatResponse> => {
     return authFetch({
       messages,
       sid,
       branchName,
+      locale,
       confirmedToolCall: { toolName, toolInput, toolUseId },
+      ...getAppcodeInfo(),
     });
   },
 };

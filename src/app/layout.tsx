@@ -5,6 +5,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { I18nProvider } from '@/i18n';
 import './globals.css';
+import 'driver.js/dist/driver.css';
+import '@/styles/tour.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -18,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
-  description: 'Admin dashboard base structure',
+  description: 'Admin dashboard for organizations',
 };
 
 export default function RootLayout({

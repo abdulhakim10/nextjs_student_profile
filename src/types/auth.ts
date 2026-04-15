@@ -38,11 +38,11 @@ export interface UserData {
   user_ic: string;
   user_email: string;
   user_addr: string;
-  sch_name: string;
-  sch_addr: string;
-  sch_coordinate: string;
-  sch_coordinate_arr: string[];
-  sch_radius: string;
+  sch_name?: string;
+  sch_addr?: string;
+  sch_coordinate?: string;
+  sch_coordinate_arr?: string[];
+  sch_radius?: string;
   system_level: string;
   system_access: string;
   system_config: string;

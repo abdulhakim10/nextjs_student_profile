@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  Bot, User, Sparkles, CalendarCheck, Users, FileBarChart, BookOpen,
-  FileSpreadsheet, Search, Clock, Settings, MapPin, UserPlus,
-  LayoutGrid, FileDown, HelpCircle, Zap, ExternalLink, Timer,
+  Bot, User, Sparkles, Users, BookOpen,
+  FileSpreadsheet, Search, Settings, HelpCircle, Zap, ExternalLink,
+  Compass, BarChart3,
 } from 'lucide-react';
 import { Quantum } from 'ldrs/react';
 import 'ldrs/react/Quantum.css';
@@ -22,10 +22,17 @@ interface AIChatMessagesProps {
   onSuggestionClick?: (text: string) => void;
 }
 
-const QUESTION_ICONS = [] as const;
-const QUESTION_KEYS = [] as const;
-const ACTION_ICONS = [] as const;
-const ACTION_KEYS = [] as const;
+const QUESTION_ICONS = [HelpCircle, Users, Search] as const;
+const QUESTION_KEYS = ['listUsers', 'howToUse', 'whatCanYouDo'] as const;
+const ACTION_ICONS = [Zap] as const;
+const ACTION_KEYS = ['sampleAction'] as const;
+
+const NAV_ITEMS: Array<{ icon: typeof BarChart3; labelKey: string; path: string }> = [
+  { icon: BarChart3, labelKey: 'navDashboard', path: '/dashboard' },
+  { icon: Users, labelKey: 'navUsers', path: '/users' },
+  { icon: BookOpen, labelKey: 'navTutorial', path: '/tutorial' },
+  { icon: Settings, labelKey: 'navSettings', path: '/settings' },
+];
 
 export function AIChatMessages({
   messages,
@@ -80,6 +87,17 @@ export function AIChatMessages({
                     label: t(key),
                   }))}
                   color="amber"
+                  onClick={onSuggestionClick}
+                />
+                <SuggestionGroup
+                  icon={Compass}
+                  title={t('navTitle')}
+                  subtitle={t('navSubtitle')}
+                  items={NAV_ITEMS.map((nav) => ({
+                    icon: nav.icon,
+                    label: `[GO:${nav.path}] ${t(nav.labelKey)}`,
+                  }))}
+                  color="emerald"
                   onClick={onSuggestionClick}
                 />
               </div>
@@ -220,20 +238,27 @@ function SuggestionGroup({
   title: string;
   subtitle: string;
   items: Array<{ icon: React.ElementType; label: string }>;
-  color: 'blue' | 'amber';
+  color: 'blue' | 'amber' | 'emerald';
   onClick: (text: string) => void;
 }) {
-  const colorStyles = color === 'blue'
-    ? {
-        header: 'text-blue-600 dark:text-blue-400',
-        headerIcon: 'text-blue-500',
-        chip: 'border-blue-200/50 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/30 hover:shadow-md hover:shadow-blue-500/10',
-      }
-    : {
-        header: 'text-amber-600 dark:text-amber-400',
-        headerIcon: 'text-amber-500',
-        chip: 'border-amber-200/50 dark:border-amber-800/30 bg-amber-50/50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100/70 dark:hover:bg-amber-900/30 hover:shadow-md hover:shadow-amber-500/10',
-      };
+  const COLOR_MAP = {
+    blue: {
+      header: 'text-blue-600 dark:text-blue-400',
+      headerIcon: 'text-blue-500',
+      chip: 'border-blue-200/50 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/30 hover:shadow-md hover:shadow-blue-500/10',
+    },
+    amber: {
+      header: 'text-amber-600 dark:text-amber-400',
+      headerIcon: 'text-amber-500',
+      chip: 'border-amber-200/50 dark:border-amber-800/30 bg-amber-50/50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100/70 dark:hover:bg-amber-900/30 hover:shadow-md hover:shadow-amber-500/10',
+    },
+    emerald: {
+      header: 'text-emerald-600 dark:text-emerald-400',
+      headerIcon: 'text-emerald-500',
+      chip: 'border-emerald-200/50 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 hover:shadow-md hover:shadow-emerald-500/10',
+    },
+  };
+  const colorStyles = COLOR_MAP[color];
 
   return (
     <div>
@@ -245,18 +270,24 @@ function SuggestionGroup({
         <span className="text-[10px] text-muted-foreground">— {subtitle}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {items.map((item, i) => (
-          <button
-            key={item.label}
-            type="button"
-            onClick={() => onClick(item.label)}
-            className={`animate-chip-in inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-all duration-200 hover:scale-[1.03] active:scale-95 ${colorStyles.chip}`}
-            style={{ animationDelay: `${i * 0.05}s` }}
-          >
-            <item.icon className="size-3 shrink-0 opacity-60 transition-transform group-hover:rotate-12" />
-            {item.label}
-          </button>
-        ))}
+        {items.map((item, i) => {
+          const navMatch = item.label.match(/^\[GO:\/[^\]]+\]\s*(.+)$/);
+          const displayLabel = navMatch ? navMatch[1] : item.label;
+          const isNav = !!navMatch;
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => onClick(item.label)}
+              className={`animate-chip-in inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-all duration-200 hover:scale-[1.03] active:scale-95 ${colorStyles.chip}`}
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
+              {isNav && <ExternalLink className="size-3 shrink-0 opacity-60" />}
+              {!isNav && <item.icon className="size-3 shrink-0 opacity-60" />}
+              {displayLabel}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

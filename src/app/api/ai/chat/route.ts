@@ -16,16 +16,12 @@ import { AI_TOOLS, WRITE_TOOLS } from '@/lib/ai/tools';
 import { buildSystemPrompt, buildCompactSystemPrompt } from '@/lib/ai/system-prompt';
 import {
   fetchSystemState,
+  fetchBranches,
   invalidateStateCache,
   UnauthorizedError,
   type SystemState,
 } from '@/lib/ai/state-fetcher';
-import {
-  UTILITIES_BASE_URL,
-  API_VERSION,
-  DEFAULT_APP,
-  type BranchInfo,
-} from '@/lib/ai/constants';
+import { type BranchInfo } from '@/lib/ai/constants';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,9 +82,18 @@ interface RequestBody {
 const MAX_CONFIRMED_LOOP_ITERATIONS = 8;
 const MAX_REGULAR_LOOP_ITERATIONS = 10;
 const MAX_ARRAY_ITEMS = 20;
+const MAX_HISTORY_MESSAGES = 20;
 
 /** Fallback state when fetch fails. */
 const EMPTY_STATE: SystemState = {};
+
+/** Prune conversation history to keep token usage manageable. */
+function pruneHistory(messages: { role: string; content: string }[]): { role: string; content: string }[] {
+  if (messages.length <= MAX_HISTORY_MESSAGES) return messages;
+  const pruned = messages.slice(-MAX_HISTORY_MESSAGES);
+  const firstUserIdx = pruned.findIndex((m) => m.role === 'user');
+  return firstUserIdx > 0 ? pruned.slice(firstUserIdx) : pruned;
+}
 
 // ---------------------------------------------------------------------------
 // Singleton Anthropic client
@@ -100,35 +105,6 @@ function getAnthropicClient(): Anthropic {
     _anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   }
   return _anthropicClient;
-}
-
-// ---------------------------------------------------------------------------
-// Branch cache (5-minute TTL)
-// ---------------------------------------------------------------------------
-
-let _branchesCache: { branches: BranchInfo[]; timestamp: number } | null = null;
-const BRANCHES_CACHE_TTL_MS = 5 * 60_000;
-
-async function fetchBranches(authHeaders: AuthHeaders): Promise<BranchInfo[]> {
-  if (_branchesCache && Date.now() - _branchesCache.timestamp < BRANCHES_CACHE_TTL_MS) {
-    return _branchesCache.branches;
-  }
-  try {
-    const url = `${UTILITIES_BASE_URL}/api/${API_VERSION}/utilities/${DEFAULT_APP}/list/branch`;
-    const res = await fetch(url, {
-      headers: buildHeaders(authHeaders),
-      cache: 'no-store',
-    });
-    if (!res.ok) return _branchesCache?.branches ?? [];
-    const json = await res.json();
-    const data = json.data ?? json;
-    if (!Array.isArray(data)) return _branchesCache?.branches ?? [];
-    const branches = data.map((b: BranchInfo) => ({ sid: b.sid, name: b.name }));
-    _branchesCache = { branches, timestamp: Date.now() };
-    return branches;
-  } catch {
-    return _branchesCache?.branches ?? [];
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +139,15 @@ async function executeTool(
     switch (toolName) {
       // Add your tool execution cases here:
       // case 'get_items':
-      //   return fetchBackend(apiUrl('/items'), 'GET', headers);
+      //   return fetchBackend(apiUrl(API_BASE_URL, '/items'), 'GET', buildHeaders(authHeaders));
+      //
+      // Example from v2 (sample tools):
+      // case 'sample_query':
+      //   return { success: true, data: { message: `Query for "${input.category}": ${input.query}`, results: [] } };
+      // case 'sample_action':
+      //   return { success: true, data: { message: `Action "${input.action}" on "${input.resource}" completed.` } };
+      // case 'get_users':
+      //   return fetchBackend(`${API_BASE_URL}/api/${API_VERSION}/user/${DEFAULT_APP}/staff/fetch`, 'POST', headers, { ... });
 
       default:
         return { success: false, error: `Unknown tool: ${toolName}` };
@@ -365,7 +349,7 @@ async function handleConfirmedAction(
 ): Promise<NextResponse> {
   const [result, branches] = await Promise.all([
     executeTool(confirmedToolCall.toolName, confirmedToolCall.toolInput, authHeaders),
-    fetchBranches(authHeaders),
+    fetchBranches(buildHeaders(authHeaders)),
   ]);
 
   invalidateStateCache(sid);
@@ -376,7 +360,7 @@ async function handleConfirmedAction(
   const compactPrompt = buildCompactSystemPrompt(sid, branchName, safeState, branches);
 
   const currentMessages: Anthropic.MessageParam[] = [
-    ...messages.map((m) => ({ role: m.role, content: m.content }) as Anthropic.MessageParam),
+    ...pruneHistory(messages).map((m) => ({ role: m.role, content: m.content }) as Anthropic.MessageParam),
     {
       role: 'assistant' as const,
       content: [
@@ -458,7 +442,7 @@ async function handleRegularMessage(
   authHeaders: AuthHeaders,
 ): Promise<NextResponse> {
   const [branches, state] = await Promise.all([
-    fetchBranches(authHeaders),
+    fetchBranches(buildHeaders(authHeaders)),
     fetchSystemState(sid, buildHeaders(authHeaders)),
   ]);
 
@@ -466,8 +450,8 @@ async function handleRegularMessage(
   const compactPrompt = buildCompactSystemPrompt(sid, branchName, state, branches);
   const client = getAnthropicClient();
 
-  const currentMessages: Anthropic.MessageParam[] = messages.map((m) => ({
-    role: m.role,
+  const currentMessages: Anthropic.MessageParam[] = pruneHistory(messages).map((m) => ({
+    role: m.role as 'user' | 'assistant',
     content: m.content,
   }));
 

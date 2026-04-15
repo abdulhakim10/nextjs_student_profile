@@ -1,7 +1,32 @@
 import apiClient from '@/lib/api-client';
+import { API_CONFIG } from '@/config/api';
 import { API_ENDPOINTS } from '@/config/endpoints';
 import { STORAGE_KEYS } from '@/config/constants';
 import type { ApiResponse, AppcodeData, LoginRequest, UserData } from '@/types';
+
+export interface SSOVerifyData {
+  encrypted_key: string;
+  server_id: string;
+  sid: string;
+  client_appname: string;
+  customer: string;
+  client_logo: string;
+  url: string;
+  bos_config: string;
+  app_config: string;
+  token: string;
+  encrypted_user: string;
+  user_id: string;
+  user_sid: number;
+  user_name: string;
+  user_image: string;
+  user_phone_num: string;
+  user_ic: string;
+  user_email: string;
+  user_addr: string;
+  system_level: string;
+  system_access: string;
+}
 
 export const authService = {
   validateAppcode: async (appcode: string) => {
@@ -18,6 +43,25 @@ export const authService = {
       data
     );
     return response.data;
+  },
+
+  verifySSOToken: async (ssoToken: string): Promise<ApiResponse<SSOVerifyData>> => {
+    const res = await fetch(
+      `${API_CONFIG.AUTH_BASE_URL}${API_ENDPOINTS.AUTH.SSO_VERIFY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sso_token: ssoToken }),
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'SSO verification failed');
+    }
+
+    return json;
   },
 
   logout: async (app?: string, userType?: string) => {

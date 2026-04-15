@@ -29,12 +29,26 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
-import { Loader2 } from 'lucide-react';
+import { useIdleTimeout } from '@/hooks/use-idle-timeout';
+import { useTranslation } from '@/i18n';
+import { Loader2, LogIn } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { t } = useTranslation('auth');
   const { isAuthenticated, isAppCodeVerified, _hasHydrated } = useAuthStore();
   const [ready, setReady] = useState(false);
+
+  // Auto-logout after inactivity — shows dialog instead of instant redirect
+  const { expired, confirmLogout } = useIdleTimeout();
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -56,5 +70,36 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+
+      <Dialog open={expired}>
+        <DialogContent
+          className="sm:max-w-[380px] p-8"
+          showCloseButton={false}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <div className="flex flex-col items-center text-center gap-4">
+            <span className="text-6xl" role="img" aria-label="sleeping">😴</span>
+            <div className="space-y-2">
+              <DialogHeader className="items-center">
+                <DialogTitle className="text-xl font-bold tracking-tight">
+                  {t('sessionExpiredTitle')}
+                </DialogTitle>
+              </DialogHeader>
+              <DialogDescription className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
+                {t('sessionExpiredDescription')}
+              </DialogDescription>
+            </div>
+            <Button onClick={confirmLogout} size="lg" className="w-full gap-2 rounded-xl h-12 text-base font-semibold mt-1">
+              <LogIn className="h-5 w-5" />
+              {t('relogin')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

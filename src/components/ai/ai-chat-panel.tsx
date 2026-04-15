@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguageStore } from '@/stores/language.store';
 import { RotateCcw, Bot, X } from 'lucide-react';
 import {
   Dialog,
@@ -20,9 +21,9 @@ import {
   type ActionCard,
 } from '@/stores/ai-chat.store';
 import { aiService, type FileDownload } from '@/services/ai.service';
-import { SKIPPABLE_ACTIONS, resolveActionName } from '@/lib/ai/tools';
+import { resolveActionName } from '@/lib/ai/tools';
 import { useTranslation } from '@/i18n';
-import { STORAGE_KEYS } from '@/config/constants';
+import { useAuthStore } from '@/stores/auth.store';
 
 function triggerFileDownload(file: FileDownload) {
   const byteCharacters = atob(file.base64);
@@ -58,13 +59,12 @@ export function AIChatPanel() {
 
   const { t } = useTranslation('ai');
   const { t: tCommon } = useTranslation('common');
+  const locale = useLanguageStore((s) => s.locale);
   const router = useRouter();
   const [actionProcessing, setActionProcessing] = useState(false);
 
-  const defaultSid = typeof window !== 'undefined'
-    ? localStorage.getItem(STORAGE_KEYS.SERVER_ID) || '0'
-    : '0';
-  const activeSid = overrideSid || defaultSid;
+  const userData = useAuthStore((s) => s.userData);
+  const activeSid = overrideSid || userData?.server_id || '0';
 
   const getApiMessages = useCallback(() => {
     return messages.map((m) => ({ role: m.role, content: m.content }));
@@ -85,7 +85,7 @@ export function AIChatPanel() {
           ...getApiMessages(),
           { role: 'user' as const, content: text },
         ];
-        const res = await aiService.sendMessage(apiMessages, activeSid);
+        const res = await aiService.sendMessage(apiMessages, activeSid, undefined, locale);
 
         const actions: ActionCard[] | undefined = res.pendingActions?.map((pa) => ({
           toolName: pa.toolName,
@@ -140,7 +140,7 @@ export function AIChatPanel() {
       try {
         const res = await aiService.confirmAction(
           getApiMessages(), activeSid, undefined,
-          action.toolName, action.toolInput, action.toolUseId
+          action.toolName, action.toolInput, action.toolUseId, locale
         );
         updateActionStatus(messageId, toolUseId, 'executed');
         if (res.fileDownload) triggerFileDownload(res.fileDownload);
@@ -180,37 +180,16 @@ export function AIChatPanel() {
   const handleRejectAction = useCallback(
     (messageId: string, toolUseId: string) => {
       updateActionStatus(messageId, toolUseId, 'rejected');
-
-      // Check if this was a skippable action to show appropriate follow-up
-      const msg = messages.find((m) => m.id === messageId);
-      const action = msg?.actions?.find((a) => a.toolUseId === toolUseId);
-      const wasSkipped = action
-        ? SKIPPABLE_ACTIONS.has(resolveActionName(action.toolName, action.toolInput))
-        : false;
-
-      if (wasSkipped) {
-        addMessage({
-          id: generateMessageId(),
-          role: 'assistant',
-          content: t('actionSkipped'),
-          timestamp: new Date(),
-          quickReplies: [
-            '[GO:/dashboard] Go to Dashboard',
-          ],
-        });
-      } else {
-        addMessage({
-          id: generateMessageId(),
-          role: 'assistant',
-          content: t('actionCancelled'),
-          timestamp: new Date(),
-        });
-      }
+      addMessage({
+        id: generateMessageId(),
+        role: 'assistant',
+        content: t('actionCancelled'),
+        timestamp: new Date(),
+      });
     },
-    [updateActionStatus, addMessage, messages]
+    [updateActionStatus, addMessage]
   );
 
-  // Handle quick reply clicks — navigate if [GO:/path], otherwise send as message
   const handleQuickReply = useCallback(
     (text: string) => {
       const navMatch = text.match(/^\[GO:(\/[^\]]+)\]\s*(.+)$/);
@@ -231,7 +210,6 @@ export function AIChatPanel() {
         showCloseButton={false}
         className="flex flex-col p-0 gap-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl h-[min(85vh,720px)] rounded-2xl overflow-hidden"
       >
-        {/* Header */}
         <DialogHeader className="border-b px-4 py-3 shrink-0 bg-gradient-to-r from-background via-background to-primary/[0.03]">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-purple-600 to-pink-500 text-primary-foreground shadow-lg shadow-primary/20 transition-transform duration-300 hover:scale-110 hover:rotate-3">
@@ -250,7 +228,6 @@ export function AIChatPanel() {
               </DialogDescription>
             </div>
 
-            {/* Clear chat — only when there are messages */}
             {messages.length > 0 && (
               <Button
                 variant="outline"
@@ -263,7 +240,6 @@ export function AIChatPanel() {
               </Button>
             )}
 
-            {/* Close dialog */}
             <DialogClose asChild>
               <Button
                 variant="ghost"
