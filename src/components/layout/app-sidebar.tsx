@@ -26,10 +26,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronUp, LogOut } from 'lucide-react';
+import { ChevronUp, LogOut, User } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 
 export function AppSidebar() {
@@ -183,6 +184,11 @@ export function AppSidebar() {
                 align="end"
                 sideOffset={4}
               >
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="rounded-lg">
+                  <User className="mr-2 h-4 w-4" />
+                  {tCommon('settings')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="rounded-lg text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   {tCommon('logout')}

@@ -25,11 +25,68 @@
   },
   "navigation": {
     "label": "Navigation",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "settings": "Settings",
+    "tutorial": "Tutorial"
   },
   "sidebar": {
     "appName": "Admin Dashboard",
     "dashboard": "Dashboard"
+  },
+  "tutorial": {
+    "title": "How It Works",
+    "subtitle": "Tutorial",
+    "heroDesc": "Learn how to use the admin dashboard step by step. Start with the basics or dive into advanced features.",
+    "tryAI": "Try with AI",
+    "search": "Search topics...",
+    "basicTab": "Basic",
+    "advancedTab": "Advanced",
+    "allTab": "All",
+    "gettingStarted": "Getting Started",
+    "gettingStartedDesc": "Welcome to the admin dashboard",
+    "gs1Title": "Log In",
+    "gs1Desc": "Enter your app code, then log in with your credentials. You'll land on the dashboard.",
+    "gs2Title": "Explore the Dashboard",
+    "gs2Desc": "The dashboard shows key metrics at a glance. Use the navigation sidebar to access different sections.",
+    "gs3Title": "Check Your Settings",
+    "gs3Desc": "Visit Settings to configure your theme and language preferences.",
+    "userManagement": "User Management",
+    "userManagementDesc": "View and manage users in your organization",
+    "um1Title": "View Users",
+    "um1Desc": "Go to the Users page to see all users. Use filters to narrow down by branch, division, or status.",
+    "um2Title": "Search Users",
+    "um2Desc": "Use the search bar to find users by name, email, or phone number.",
+    "um3Title": "User Details",
+    "um3Desc": "Click on any user to view their full profile including contact info and department.",
+    "aiAssistant": "Using the AI Assistant",
+    "aiAssistantDesc": "Let AI help you manage your dashboard",
+    "ai1Title": "Open the Chat",
+    "ai1Desc": "Click the AI chat button to open the assistant. Type your question naturally.",
+    "ai2Title": "What You Can Ask",
+    "ai2Desc": "Ask about users, settings, or general questions about the dashboard.",
+    "ai3Title": "Confirm Actions",
+    "ai3Desc": "When the AI wants to make changes, it will ask for your confirmation first.",
+    "tips": "Tips & Shortcuts",
+    "tipsDesc": "Get the most out of the system",
+    "tp1Title": "Command Palette",
+    "tp1Desc": "Press Cmd+K (or Ctrl+K) to open the command palette for quick navigation and actions.",
+    "tp2Title": "AI for Quick Actions",
+    "tp2Desc": "Use the AI assistant for complex queries — searching users, getting information, and more.",
+    "tp3Title": "Theme & Language",
+    "tp3Desc": "Customize your experience in Settings. Switch between light/dark mode and English/Malay.",
+    "tip": "Tip",
+    "startTour": "Take a Tour",
+    "tourAvailable": "Tour available",
+    "goToPage": "Go to page",
+    "noResults": "No matching topics found."
+  },
+  "dashboard": {
+    "subtitle": "Here's an overview of your system.",
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "newThisMonth": "New This Month",
+    "growthRate": "Growth Rate"
   },
   "greeting": {
     "morning": "Good Morning",
@@ -38,9 +95,9 @@
   },
   "ai": {
     "assistant": "AI Assistant",
-    "description": "Your AI-powered assistant",
+    "description": "Your smart dashboard helper",
     "greeting": "Hi! I'm your AI Assistant",
-    "helpText": "I can help you with questions and tasks.",
+    "helpText": "I can help with user queries, settings, and more.",
     "thinking": "Thinking...",
     "clearChat": "Clear chat",
     "placeholder": "Ask me anything...",
@@ -49,9 +106,6 @@
     "completed": "Completed",
     "executingAction": "Executing action...",
     "cancelled": "Cancelled",
-    "skip": "Skip for now",
-    "skipped": "Skipped",
-    "actionSkipped": "No problem! You can do this later from the pages below.",
     "actionCancelled": "Action cancelled. Let me know if you need anything else.",
     "errorPrefix": "Sorry, I encountered an error:",
     "errorRetry": "Please try again.",
@@ -60,7 +114,17 @@
     "questionsTitle": "Questions",
     "questionsSubtitle": "Ask about your data",
     "actionsTitle": "Actions",
-    "actionsSubtitle": "Manage your system"
+    "actionsSubtitle": "Manage your system",
+    "listUsers": "List all users",
+    "howToUse": "How do I use this?",
+    "whatCanYouDo": "What can you do?",
+    "sampleAction": "Try a sample action",
+    "navTitle": "Navigate",
+    "navSubtitle": "Go to a page",
+    "navDashboard": "Dashboard",
+    "navUsers": "Users",
+    "navTutorial": "Tutorial",
+    "navSettings": "Settings"
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",
@@ -69,5 +133,10 @@
     "actions": "Actions",
     "toggleLight": "Toggle Light Mode",
     "toggleDark": "Toggle Dark Mode"
+  },
+  "auth": {
+    "sessionExpiredTitle": "You've been away!",
+    "sessionExpiredDescription": "We logged you out to keep your account safe. Tap below to jump back in.",
+    "relogin": "Log In Again"
   }
 }

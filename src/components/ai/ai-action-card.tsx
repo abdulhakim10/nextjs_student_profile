@@ -1,11 +1,11 @@
 'use client';
 
-import { Check, X, SkipForward, Loader2, Plus, Pencil, Trash2, Bell, Zap, Sparkles, Bot } from 'lucide-react';
+import { Check, X, Loader2, Zap, Sparkles, Bot } from 'lucide-react';
 import { Quantum } from 'ldrs/react';
 import 'ldrs/react/Quantum.css';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n';
-import { SKIPPABLE_ACTIONS, resolveActionName } from '@/lib/ai/tools';
+import { resolveActionName } from '@/lib/ai/tools';
 import type { ActionCard } from '@/stores/ai-chat.store';
 
 interface AIActionCardProps {
@@ -15,12 +15,7 @@ interface AIActionCardProps {
   disabled?: boolean;
 }
 
-function getActionIcon(toolName: string, toolInput?: Record<string, unknown>) {
-  const action = resolveActionName(toolName, toolInput);
-  if (action.startsWith('create_') || action === 'assign_employees' || action === 'upsert_location') return Plus;
-  if (action.startsWith('update_')) return Pencil;
-  if (action.startsWith('delete_') || action === 'remove_employees') return Trash2;
-  if (action === 'send_notification') return Bell;
+function getActionIcon() {
   return Zap;
 }
 
@@ -61,9 +56,7 @@ function RobotBuilder() {
 export function AIActionCard({ action, onConfirm, onReject, disabled }: AIActionCardProps) {
   const { t } = useTranslation('ai');
   const { t: tCommon } = useTranslation('common');
-  const Icon = getActionIcon(action.toolName, action.toolInput);
-  const resolvedAction = resolveActionName(action.toolName, action.toolInput);
-  const isSkippable = SKIPPABLE_ACTIONS.has(resolvedAction);
+  const Icon = getActionIcon();
   const isPending = action.status === 'pending';
   const isExecuting = action.status === 'confirmed';
   const isCompleted = action.status === 'executed';
@@ -151,8 +144,8 @@ export function AIActionCard({ action, onConfirm, onReject, disabled }: AIAction
             disabled={disabled}
             className="rounded-lg hover:scale-[1.02] active:scale-95 transition-all duration-200"
           >
-            {isSkippable ? <SkipForward className="size-3" /> : <X className="size-3" />}
-            {isSkippable ? t('skip') : tCommon('cancel')}
+            <X className="size-3" />
+            {tCommon('cancel')}
           </Button>
         </div>
       )}
@@ -168,8 +161,8 @@ export function AIActionCard({ action, onConfirm, onReject, disabled }: AIAction
       {/* Rejected/skipped */}
       {isRejected && (
         <p className="text-xs text-muted-foreground mt-2 ml-10 flex items-center gap-1">
-          {isSkippable ? <SkipForward className="size-3" /> : <X className="size-3" />}
-          {isSkippable ? t('skipped') : t('cancelled')}
+          <X className="size-3" />
+          {t('cancelled')}
         </p>
       )}
     </div>

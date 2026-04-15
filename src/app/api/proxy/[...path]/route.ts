@@ -1,5 +1,6 @@
 /**
  * API Proxy Route — Routes requests to the correct backend service.
+ * Supports JSON and multipart/form-data requests.
  * Customize the path matchers and base URLs for your module's backends.
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,24 +14,21 @@ const NOTIFICATION_BASE_URL = process.env.NEXT_PUBLIC_NOTIFICATION_API_BASE_URL 
 /** Paths that use the auth domain (aws01): appcode, login, logout */
 function isAuthPath(path: string): boolean {
   const normalized = path.replace(/^\/+/, '');
-  // api/v2/auth/appcode, api/v2/auth/:app/:user/login, api/v2/auth/:app/:user/logout
   if (!normalized.startsWith('api/')) return false;
-  const rest = normalized.slice(4); // after 'api/'
+  const rest = normalized.slice(4);
   if (!rest.startsWith('v2/auth/')) return false;
-  const afterAuth = rest.slice(8); // after 'v2/auth/'
+  const afterAuth = rest.slice(8);
   if (afterAuth === 'appcode') return true;
-  if (/^[^/]+\/[^/]+\/login$/.test(afterAuth)) return true; // eboss/staff/login
-  if (/^[^/]+\/[^/]+\/logout$/.test(afterAuth)) return true; // eboss/staff/logout
+  if (/^[^/]+\/[^/]+\/login$/.test(afterAuth)) return true;
+  if (/^[^/]+\/[^/]+\/logout$/.test(afterAuth)) return true;
   return false;
 }
 
-/** Paths that use the attendance service (localhost:20019) */
+/** Paths that use the attendance service */
 function isAttendancePath(path: string): boolean {
   const normalized = path.replace(/^\/+/, '');
-  // api/v2/attendance/...
   if (!normalized.startsWith('api/')) return false;
-  const rest = normalized.slice(4); // after 'api/'
-  return rest.startsWith('v2/attendance/');
+  return normalized.slice(4).startsWith('v2/attendance/');
 }
 
 /** Paths that use the utilities service */
@@ -40,7 +38,7 @@ function isUtilitiesPath(path: string): boolean {
   return normalized.slice(4).startsWith('v2/utilities/');
 }
 
-/** Paths that use the notification service (devapi01) */
+/** Paths that use the notification service */
 function isNotificationPath(path: string): boolean {
   const normalized = path.replace(/^\/+/, '');
   if (!normalized.startsWith('api/')) return false;
@@ -86,43 +84,56 @@ async function proxyRequest(
 ) {
   try {
     const path = pathSegments.join('/');
-    const baseUrl = isAuthPath(path) ? AUTH_BASE_URL : isAttendancePath(path) ? ATTENDANCE_BASE_URL : isUtilitiesPath(path) ? UTILITIES_BASE_URL : isNotificationPath(path) ? NOTIFICATION_BASE_URL : API_BASE_URL;
-    const queryString = request.nextUrl.search; // includes leading '?' if present
+    const baseUrl = isAuthPath(path)
+      ? AUTH_BASE_URL
+      : isAttendancePath(path)
+        ? ATTENDANCE_BASE_URL
+        : isUtilitiesPath(path)
+          ? UTILITIES_BASE_URL
+          : isNotificationPath(path)
+            ? NOTIFICATION_BASE_URL
+            : API_BASE_URL;
+    const queryString = request.nextUrl.search;
     const url = `${baseUrl}/${path}${queryString}`;
-    
-    // Get request body if present
-    let body = null;
+
+    // Handle body — supports both JSON and multipart/form-data
+    let body: BodyInit | null = null;
+    const incomingContentType = request.headers.get('content-type') || '';
+    const isFormData = incomingContentType.includes('multipart/form-data');
+
     if (method !== 'GET' && method !== 'HEAD') {
       try {
-        body = await request.text();
-      } catch (e) {
+        if (isFormData) {
+          const incoming = await request.formData();
+          const outgoing = new FormData();
+          for (const [key, value] of incoming.entries()) {
+            outgoing.append(key, value);
+          }
+          body = outgoing;
+        } else {
+          body = await request.text();
+        }
+      } catch {
         // No body
       }
     }
 
-    // Forward relevant headers
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+    // Forward relevant headers — skip Content-Type for FormData (browser sets boundary)
+    const headers: HeadersInit = {};
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
 
-    // Forward auth headers if present
     const authHeader = request.headers.get('Authorization');
     const encryptedKey = request.headers.get('x-encrypted-key');
     const encryptedUser = request.headers.get('x-encrypted-user');
 
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-    if (encryptedKey) {
-      headers['x-encrypted-key'] = encryptedKey;
-    }
-    if (encryptedUser) {
-      headers['x-encrypted-user'] = encryptedUser;
-    }
+    if (authHeader) headers['Authorization'] = authHeader;
+    if (encryptedKey) headers['x-encrypted-key'] = encryptedKey;
+    if (encryptedUser) headers['x-encrypted-user'] = encryptedUser;
 
     const label = baseUrl === AUTH_BASE_URL ? 'auth' : baseUrl === ATTENDANCE_BASE_URL ? 'attendance' : baseUrl === UTILITIES_BASE_URL ? 'utilities' : baseUrl === NOTIFICATION_BASE_URL ? 'notification' : 'api';
     console.log(`[Proxy] ${method} ${url} (${label})`);
-    console.log(`[Proxy] Auth header present: ${!!authHeader}, Token prefix: ${authHeader?.substring(0, 15) || 'NONE'}`);
 
     const response = await fetch(url, {
       method,
@@ -135,20 +146,18 @@ async function proxyRequest(
     if (!response.ok) {
       console.error(`[Proxy] ${method} ${url} → ${response.status}`, data.substring(0, 500));
     }
-    
+
     return new NextResponse(data, {
       status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('[Proxy] Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Proxy request failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

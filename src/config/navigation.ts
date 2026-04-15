@@ -1,5 +1,8 @@
 import {
   LayoutDashboard,
+  Users,
+  Settings,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 import type { Translations } from '@/i18n';
@@ -23,5 +26,20 @@ export const NAV_ITEMS: NavItem[] = [
     titleKey: 'dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    titleKey: 'users',
+    href: '/users',
+    icon: Users,
+  },
+  {
+    titleKey: 'tutorial',
+    href: '/tutorial',
+    icon: BookOpen,
+  },
+  {
+    titleKey: 'settings',
+    href: '/settings',
+    icon: Settings,
   },
 ];

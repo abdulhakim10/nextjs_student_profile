@@ -1,0 +1,97 @@
+/* Custom styling for driver.js tour popovers */
+.tour-popover {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  max-width: 340px !important;
+  padding: 20px !important;
+}
+
+.tour-popover .driver-popover-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #111111 !important;
+  margin-bottom: 6px !important;
+}
+
+.tour-popover .driver-popover-description {
+  font-size: 13px !important;
+  color: #555555 !important;
+  line-height: 1.6 !important;
+}
+
+.tour-popover .driver-popover-progress-text {
+  font-size: 11px !important;
+  color: #999999 !important;
+}
+
+.tour-popover .driver-popover-footer {
+  margin-top: 16px !important;
+}
+
+.tour-popover .driver-popover-navigation-btns {
+  gap: 8px !important;
+}
+
+.tour-popover .driver-popover-next-btn,
+.tour-popover .driver-popover-prev-btn,
+.tour-popover .driver-popover-close-btn {
+  text-shadow: none !important;
+}
+
+.tour-popover .driver-popover-next-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 7px 18px !important;
+}
+
+.tour-popover .driver-popover-next-btn:hover {
+  background: linear-gradient(135deg, #6d28d9, #4338ca) !important;
+}
+
+.tour-popover .driver-popover-prev-btn {
+  background: #f5f5f5 !important;
+  color: #555555 !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 7px 18px !important;
+}
+
+.tour-popover .driver-popover-prev-btn:hover {
+  background: #ebebeb !important;
+}
+
+.tour-popover .driver-popover-close-btn {
+  color: #999999 !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.tour-popover .driver-popover-close-btn:hover {
+  color: #333333 !important;
+}
+
+/* Arrow colors — always white to match popover background */
+.driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-bottom-color: #ffffff !important;
+}
+
+.driver-popover-arrow-side-top .driver-popover-arrow {
+  border-top-color: #ffffff !important;
+}
+
+.driver-popover-arrow-side-left .driver-popover-arrow {
+  border-left-color: #ffffff !important;
+}
+
+.driver-popover-arrow-side-right .driver-popover-arrow {
+  border-right-color: #ffffff !important;
+}
