@@ -203,6 +203,42 @@
   background-image: radial-gradient(oklch(0.65 0.24 265 / 6%) 1px, transparent 1px);
 }
 
+/* Sidebar premium mesh — multi-stop colored gradient for a real "designed surface" feel */
+.sidebar-premium [data-slot="sidebar-inner"] {
+  background-color: oklch(0.985 0.005 265);
+  background-image:
+    radial-gradient(60% 35% at 8% 0%, oklch(0.55 0.24 265 / 12%) 0%, transparent 55%),
+    radial-gradient(45% 30% at 100% 18%, oklch(0.60 0.22 300 / 9%) 0%, transparent 55%),
+    radial-gradient(70% 45% at 50% 100%, oklch(0.60 0.20 230 / 7%) 0%, transparent 55%),
+    radial-gradient(40% 25% at 100% 100%, oklch(0.55 0.24 265 / 6%) 0%, transparent 50%);
+  position: relative;
+}
+
+.sidebar-premium [data-slot="sidebar-inner"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(oklch(0.55 0.24 265 / 5%) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.5;
+  mask-image: linear-gradient(180deg, transparent 0%, black 25%, black 75%, transparent 100%);
+}
+
+.dark .sidebar-premium [data-slot="sidebar-inner"] {
+  background-color: oklch(0.15 0.025 265);
+  background-image:
+    radial-gradient(60% 35% at 8% 0%, oklch(0.65 0.24 265 / 18%) 0%, transparent 55%),
+    radial-gradient(45% 30% at 100% 18%, oklch(0.65 0.22 300 / 14%) 0%, transparent 55%),
+    radial-gradient(70% 45% at 50% 100%, oklch(0.65 0.20 230 / 10%) 0%, transparent 55%),
+    radial-gradient(40% 25% at 100% 100%, oklch(0.65 0.24 265 / 8%) 0%, transparent 50%);
+}
+
+.dark .sidebar-premium [data-slot="sidebar-inner"]::before {
+  background-image: radial-gradient(oklch(0.65 0.24 265 / 6%) 1px, transparent 1px);
+  opacity: 0.4;
+}
+
 /* Hide scrollbar utility */
 .scrollbar-none {
   -ms-overflow-style: none;
@@ -210,6 +246,15 @@
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Scrollable body inside a flex-col Dialog: fills remaining height and keeps
+   the scrollbar flush with the dialog edge via negative margin + padding. */
+.dialog-scroll-body {
+  flex: 1 1 0%;
+  overflow-y: auto;
+  margin-right: -0.5rem;
+  padding-right: 0.5rem;
 }
 
 /* Sliding progress bar for action cards */
@@ -790,15 +835,6 @@
   pointer-events: auto !important;
 }
 
-/* ===== Sonner Toast Position — top center ===== */
-[data-sonner-toaster] {
-  top: 1rem !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  right: auto !important;
-  bottom: auto !important;
-}
-
 /* ===== Custom Toast Animations ===== */
 
 /* Toast slide-in entrance */
@@ -807,8 +843,18 @@
 }
 
 @keyframes toast-slide-in {
-  0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+  0% { transform: translateX(40px) scale(0.95); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+/* Toast sparkle twinkle */
+@keyframes toast-sparkle {
+  0%, 100% { opacity: 0.4; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+
+.animate-toast-sparkle {
+  animation: toast-sparkle 1.5s ease-in-out infinite;
 }
 
 /* Success icon pop */
@@ -837,14 +883,4 @@
 
 .animate-toast-icon-shake {
   animation: toast-icon-shake 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
-}
-
-/* Toast sparkle twinkle */
-@keyframes toast-sparkle {
-  0%, 100% { opacity: 0.4; transform: scale(0.8) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
-}
-
-.animate-toast-sparkle {
-  animation: toast-sparkle 1.5s ease-in-out infinite;
 }

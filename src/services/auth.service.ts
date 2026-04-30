@@ -24,6 +24,8 @@ export interface SSOVerifyData {
   user_ic: string;
   user_email: string;
   user_addr: string;
+  sch_name: string;
+  sch_addr: string;
   system_level: string;
   system_access: string;
 }

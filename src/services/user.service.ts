@@ -43,12 +43,56 @@ export const userService = {
   },
 
   /**
-   * Get branch list — GET /api/v2/utilities/{app}/list/branch
-   * Headers: x-encrypted-key
+   * Get branch list — GET /api/v2/utilities/{app}/list/branch/all
+   * Headers: x-encrypted-key. Optional district param to filter by area.
    */
-  getBranchList: async (app: string = defaultApp) => {
+  getBranchList: async (app: string = defaultApp, district?: string) => {
     const response = await apiClient.get<ApiResponse<BranchListItem[]>>(
-      API_ENDPOINTS.UTILITIES.BRANCH_LIST(app)
+      API_ENDPOINTS.UTILITIES.BRANCH_LIST(app),
+      district ? { params: { district } } : undefined
+    );
+    return response.data;
+  },
+
+  /**
+   * Get country list — GET /api/v2/utilities/{app}/list/country
+   */
+  getCountryList: async (app: string = defaultApp) => {
+    const response = await apiClient.get<ApiResponse<UtilityListItem[]>>(
+      API_ENDPOINTS.UTILITIES.COUNTRY_LIST(app)
+    );
+    return response.data;
+  },
+
+  /**
+   * Get state list — GET /api/v2/utilities/{app}/list/state?country={name}
+   */
+  getStateList: async (country: string, app: string = defaultApp) => {
+    const response = await apiClient.get<ApiResponse<UtilityListItem[]>>(
+      API_ENDPOINTS.UTILITIES.STATE_LIST(app),
+      { params: { country } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get district list — GET /api/v2/utilities/{app}/list/district?state={name}
+   */
+  getDistrictList: async (state: string, app: string = defaultApp) => {
+    const response = await apiClient.get<ApiResponse<UtilityListItem[]>>(
+      API_ENDPOINTS.UTILITIES.DISTRICT_LIST(app),
+      { params: { state } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get city list — GET /api/v2/utilities/{app}/list/city?state={name}&country={name}
+   */
+  getCityList: async (state: string, country: string, app: string = defaultApp) => {
+    const response = await apiClient.get<ApiResponse<UtilityListItem[]>>(
+      API_ENDPOINTS.UTILITIES.CITY_LIST(app),
+      { params: { state, country } }
     );
     return response.data;
   },

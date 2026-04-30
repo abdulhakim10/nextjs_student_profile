@@ -27,7 +27,15 @@ export const API_ENDPOINTS = {
     CALENDAR_EVENTS: (app: string = API_CONFIG.DEFAULT_APP) =>
       `/api/${v}/utilities/${app}/calendar/events`,
     BRANCH_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>
-      `/api/${v}/utilities/${app}/list/branch`,
+      `/api/${v}/utilities/${app}/list/branch/all`,
+    COUNTRY_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>
+      `/api/${v}/utilities/${app}/list/country`,
+    STATE_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>
+      `/api/${v}/utilities/${app}/list/state`,
+    DISTRICT_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>
+      `/api/${v}/utilities/${app}/list/district`,
+    CITY_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>
+      `/api/${v}/utilities/${app}/list/city`,
     DIVISION_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>
       `/api/${v}/utilities/${app}/list/user/job/division`,
     POSITION_LIST: (app: string = API_CONFIG.DEFAULT_APP) =>

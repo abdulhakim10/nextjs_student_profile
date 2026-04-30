@@ -78,3 +78,4 @@ export interface UtilityListItem {
   prm: string | null;
   val: number;
 }
+

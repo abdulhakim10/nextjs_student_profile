@@ -7,10 +7,10 @@ import type { TranslationNamespace, Translations, TranslationFn } from './types'
  *
  * @example
  *   const { t } = useTranslation('dashboard');
- *   t('totalStaff') // → "Jumlah Kakitangan" (ms) or "Total Staff" (en)
+ *   t('totalUsers') // → "Jumlah Pengguna" (ms) or "Total Users" (en)
  *
  * When passing `t` to utility functions, cast-free via TranslationFn:
- *   computeInsights(summary, trend, t)
+ *   computeInsights(summary, t)
  */
 export function useTranslation<NS extends TranslationNamespace>(namespace: NS) {
   const { locale, translations } = useI18nContext();

@@ -41,7 +41,7 @@
  *     - auth-storage    : Zustand persisted store (appcode + login state)
  */
 
-import { STORAGE_KEYS } from '@/config/constants';
+import { STORAGE_KEYS, SESSION_KEYS } from '@/config/constants';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -96,6 +96,10 @@ export function clearSessionStorage() {
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_USER);
   localStorage.removeItem(STORAGE_KEYS.FIREBASE_ID);
+  localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
+
+  // Clear branch selector so next login doesn't inherit stale branch
+  sessionStorage.removeItem(SESSION_KEYS.BRANCH_SID);
 }
 
 /**
@@ -111,10 +115,14 @@ export function clearAllAuthStorage() {
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_USER);
   localStorage.removeItem(STORAGE_KEYS.FIREBASE_ID);
+  localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
 
   // Appcode keys
   localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_KEY);
   localStorage.removeItem(STORAGE_KEYS.SERVER_ID);
+
+  // Session state
+  sessionStorage.removeItem(SESSION_KEYS.BRANCH_SID);
 }
 
 // ---------------------------------------------------------------------------

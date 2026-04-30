@@ -58,6 +58,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     } else if (!isAuthenticated) {
       router.replace('/auth/login');
     } else {
+      // Genuine external→internal sync: gate render on Zustand-hydrated auth state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setReady(true);
     }
   }, [_hasHydrated, isAuthenticated, isAppCodeVerified, router]);

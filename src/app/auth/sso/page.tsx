@@ -38,8 +38,8 @@ function mapUserData(data: SSOVerifyData): UserData {
     user_ic: data.user_ic || '',
     user_email: data.user_email || '',
     user_addr: data.user_addr || '',
-    sch_name: '',
-    sch_addr: '',
+    sch_name: data.sch_name || '',
+    sch_addr: data.sch_addr || '',
     sch_coordinate: '',
     sch_coordinate_arr: [],
     sch_radius: '',
@@ -64,6 +64,8 @@ export default function SSOPage() {
     if (verifyAttempted.current) return;
 
     if (!token) {
+      // External-state sync: SSO token comes from URL search param, not local state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('Missing SSO token');
       return;
     }
