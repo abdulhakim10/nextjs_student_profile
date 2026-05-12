@@ -1,8 +1,8 @@
 import { format, parseISO, isValid } from 'date-fns';
 
-/** Returns today (or a given Date) as `YYYY-MM-DD` string. */
-export function toISODate(date: Date = new Date()): string {
-  return date.toISOString().split('T')[0];
+/** Returns a Date as local `YYYY-MM-DD` string (defaults to today). */
+export function toLocalDate(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function formatDate(date: string | Date): string {

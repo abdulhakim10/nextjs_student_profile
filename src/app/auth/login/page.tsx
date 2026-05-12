@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/auth.service';
-import { APP_VERSION } from '@/config/constants';
+import { APP_VERSION, STORAGE_KEYS } from '@/config/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Eye, EyeOff, LogIn } from 'lucide-react';
+import { ArrowLeft, Loader2, Eye, EyeOff, LogIn, User, Lock } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation('auth');
   const {
     appcodeData,
     isAppCodeVerified,
@@ -56,15 +58,17 @@ export default function LoginPage() {
 
       if (response.success && response.data) {
         setUserData(response.data, firebaseId);
+        // Direct login = user is now using this module standalone, not via SSO.
+        // Sever the SSO origin so future idle/logout goes to module's own login.
+        localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
         router.push('/dashboard');
       } else {
-        setError(response.message || 'Login failed. Please check your credentials.');
+        setError(response.message || t('loginFailed'));
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(
-        error.response?.data?.message ||
-          'Login failed. Please check your credentials.'
+        error.response?.data?.message || t('loginFailed')
       );
     } finally {
       setLoading(false);
@@ -81,57 +85,60 @@ export default function LoginPage() {
     <div className="p-8">
       <div className="text-center mb-6">
         {appcodeData?.client_logo ? (
-          <div className="mx-auto mb-4 ring-4 ring-primary/10 rounded-full inline-block">
-            <Image
-              src={appcodeData.client_logo}
-              alt={appcodeData.customer || 'Organization'}
-              width={64}
-              height={64}
-              className="rounded-full"
-              unoptimized
-            />
+          <div className="relative mx-auto mb-4 inline-block">
+            <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl" />
+            <div className="relative ring-4 ring-primary/10 rounded-full inline-block bg-card">
+              <Image
+                src={appcodeData.client_logo}
+                alt={appcodeData.customer || t('organizationFallback')}
+                width={64}
+                height={64}
+                className="rounded-full"
+                unoptimized
+              />
+            </div>
           </div>
-        ) : (
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 ring-4 ring-primary/5">
-            <LogIn className="h-6 w-6 text-primary" />
-          </div>
-        )}
-        <h2 className="text-2xl font-bold tracking-tight">
-          {appcodeData?.customer || 'Sign In'}
+        ) : null}
+        <h2 className="text-2xl font-semibold tracking-tight">
+          {appcodeData?.customer || t('signInTitle')}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Enter your credentials to access the dashboard
+          {t('signInDesc')}
         </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="username" className="text-sm font-medium">
-            Username
+            {t('username')}
           </Label>
-          <Input
-            id="username"
-            type="text"
-            placeholder="Enter your username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={isLoading}
-            autoFocus
-            className="h-11 rounded-xl"
-          />
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              id="username"
+              type="text"
+              placeholder={t('enterUsername')}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
+              autoFocus
+              className="h-11 pl-10 rounded-xl bg-background/60 focus-visible:ring-primary/30"
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password" className="text-sm font-medium">
-            Password
+            {t('password')}
           </Label>
           <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
+              placeholder={t('enterPassword')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              className="h-11 rounded-xl pr-10"
+              className="h-11 pl-10 pr-10 rounded-xl bg-background/60 focus-visible:ring-primary/30"
             />
             <Button
               type="button"
@@ -139,6 +146,7 @@ export default function LoginPage() {
               size="sm"
               className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -156,18 +164,18 @@ export default function LoginPage() {
         <div className="space-y-3 pt-1">
           <Button
             type="submit"
-            className="w-full h-11 rounded-xl font-medium text-sm gap-2"
+            className="group w-full h-11 rounded-xl font-medium text-sm gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
             disabled={isLoading || !username.trim() || !password.trim()}
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Signing in...
+                {t('signingIn')}
               </>
             ) : (
               <>
-                <LogIn className="h-4 w-4" />
-                Sign In
+                <LogIn className="h-4 w-4 transition-transform group-hover:scale-110" />
+                {t('signInBtn')}
               </>
             )}
           </Button>
@@ -179,7 +187,7 @@ export default function LoginPage() {
             disabled={isLoading}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Change Organization
+            {t('changeOrganization')}
           </Button>
         </div>
       </form>

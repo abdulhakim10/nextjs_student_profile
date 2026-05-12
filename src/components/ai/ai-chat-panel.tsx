@@ -208,7 +208,7 @@ export function AIChatPanel() {
     <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton={false}
-        className="flex flex-col p-0 gap-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl h-[min(85vh,720px)] rounded-2xl overflow-hidden"
+        className="flex flex-col p-0 gap-0 sm:max-w-lg md:max-w-xl lg:max-w-2xl h-[min(95vh,720px)] sm:h-[min(85vh,720px)] rounded-2xl overflow-hidden"
       >
         <DialogHeader className="border-b px-4 py-3 shrink-0 bg-gradient-to-r from-background via-background to-primary/[0.03]">
           <div className="flex items-center gap-3">

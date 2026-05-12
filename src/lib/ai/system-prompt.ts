@@ -1,13 +1,10 @@
 import type { SystemState } from './state-fetcher';
 import type { BranchInfo } from './constants';
+import { toLocalDate } from '@/lib/date-utils';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function today(): string {
-  return new Date().toISOString().split('T')[0];
-}
 
 function buildBranchContext(
   sid: string,
@@ -45,7 +42,7 @@ Active branch: ${branchName ? `"${branchName}" (sid="${sid}")` : `sid="${sid}"`}
 
 const QUICK_REPLIES = `## Quick Replies
 Use <<<QUICK_REPLIES>>>...<<<END_QUICK_REPLIES>>> for option buttons. One per line, plain text.
-For navigation: \`[GO:/path] Label\`. Available pages: /dashboard, /users, /tutorial, /settings, /modules/dashboard.`;
+For navigation: \`[GO:/path] Label\`. Available pages: /dashboard, /users, /tutorial, /settings.`;
 
 const CORE_RULES = `## Important Rules
 1. **Use tools for data.** Never fabricate data. Always call the appropriate tool and report actual results.
@@ -75,7 +72,7 @@ export function buildCompactSystemPrompt(
   return `You are an AI Assistant for the Admin Dashboard. ${langInstruction}
 
 ## Context
-Date: ${today()}. ${branchCtx}
+Date: ${toLocalDate()}. ${branchCtx}
 
 ${CORE_RULES}
 
@@ -93,7 +90,7 @@ export function buildSystemPrompt(
   branches: BranchInfo[] = [],
   locale?: string,
 ): string {
-  const date = today();
+  const date = toLocalDate();
   const branchSection = buildBranchContext(sid, branchName, branches, true);
   const langInstruction = locale === 'ms'
     ? 'IMPORTANT: Always respond in Bahasa Melayu.'

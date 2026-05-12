@@ -15,6 +15,7 @@ import React from 'react';
 import { Search, Sun, Moon, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { AppLauncher } from '@/components/layout/app-launcher';
 import { useTranslation } from '@/i18n';
 import { useAIChatStore } from '@/stores/ai-chat.store';
 
@@ -34,7 +35,7 @@ export function AppHeader() {
   const pathname = usePathname();
   const breadcrumbs = generateBreadcrumbs(pathname);
   const { t } = useTranslation('common');
-  const { t: tAi } = useTranslation('ai');
+  const { t: tDash } = useTranslation('dashboard');
   const { setTheme, theme } = useTheme();
   const toggleAI = useAIChatStore((s) => s.togglePanel);
 
@@ -55,9 +56,9 @@ export function AppHeader() {
               {index > 0 && <BreadcrumbSeparator />}
               <BreadcrumbItem>
                 {crumb.isLast ? (
-                  <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
+                  <BreadcrumbPage className="font-medium truncate max-w-[120px] sm:max-w-none">{crumb.label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={crumb.href} className="hover:text-primary transition-colors">
+                  <BreadcrumbLink href={crumb.href} className="hover:text-primary transition-colors truncate max-w-[120px] sm:max-w-none">
                     {crumb.label}
                   </BreadcrumbLink>
                 )}
@@ -75,7 +76,7 @@ export function AppHeader() {
         >
           <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-purple-500 to-primary opacity-0 blur-sm group-hover:opacity-40 transition-opacity" />
           <Sparkles className="h-3.5 w-3.5 relative" />
-          <span className="relative hidden sm:inline">{tAi('assistant')}</span>
+          <span className="relative hidden sm:inline">{tDash('aiAssistant')}</span>
           {/* Online pulse */}
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
@@ -94,6 +95,7 @@ export function AppHeader() {
           </kbd>
         </button>
         <LanguageSwitcher />
+        <AppLauncher />
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="flex items-center justify-center rounded-lg border border-border/60 bg-muted/50 p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

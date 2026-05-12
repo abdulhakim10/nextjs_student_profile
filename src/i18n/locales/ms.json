@@ -86,7 +86,13 @@
     "totalUsers": "Jumlah Pengguna",
     "activeUsers": "Pengguna Aktif",
     "newThisMonth": "Baru Bulan Ini",
-    "growthRate": "Kadar Pertumbuhan"
+    "growthRate": "Kadar Pertumbuhan",
+    "aiAssistant": "Pembantu AI",
+    "branch": "Cawangan",
+    "loadingBranches": "Memuatkan cawangan...",
+    "selectBranch": "Pilih cawangan",
+    "allBranches": "Semua Cawangan",
+    "noBranchAvailable": "Tiada cawangan tersedia"
   },
   "greeting": {
     "morning": "Selamat Pagi",
@@ -137,6 +143,34 @@
   "auth": {
     "sessionExpiredTitle": "Anda telah lama tidak aktif!",
     "sessionExpiredDescription": "Kami log keluar anda untuk menjaga keselamatan akaun anda. Tekan di bawah untuk masuk semula.",
-    "relogin": "Log Masuk Semula"
+    "relogin": "Log Masuk Semula",
+
+    "welcomeBack": "Selamat kembali",
+    "welcomeBackDesc": "Masukkan kod organisasi anda untuk meneruskan",
+    "organizationCode": "Kod Organisasi",
+    "enterAppcode": "Masukkan kod aplikasi",
+    "invalidAppcode": "Kod aplikasi tidak sah. Sila cuba lagi.",
+    "failedValidateAppcode": "Gagal mengesahkan kod aplikasi. Sila cuba lagi.",
+    "serverError": "Ralat pelayan ({status}). Sila cuba lagi.",
+    "validating": "Mengesahkan...",
+    "continueBtn": "Teruskan",
+
+    "signInTitle": "Log Masuk",
+    "signInDesc": "Masukkan kelayakan anda untuk mengakses papan pemuka",
+    "username": "Nama Pengguna",
+    "password": "Kata Laluan",
+    "enterUsername": "Masukkan nama pengguna anda",
+    "enterPassword": "Masukkan kata laluan anda",
+    "loginFailed": "Log masuk gagal. Sila semak kelayakan anda.",
+    "signingIn": "Sedang log masuk...",
+    "signInBtn": "Log Masuk",
+    "changeOrganization": "Tukar Organisasi",
+
+    "appTagline": "Papan Pemuka Admin Pintar",
+    "secureFooter": "Papan pemuka admin selamat",
+    "toggleTheme": "Tukar tema",
+    "showPassword": "Tunjuk kata laluan",
+    "hidePassword": "Sembunyi kata laluan",
+    "organizationFallback": "Organisasi"
   }
 }

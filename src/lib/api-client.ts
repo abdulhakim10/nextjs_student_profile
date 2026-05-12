@@ -3,8 +3,8 @@
  * API Client — Axios instance for all service layer HTTP calls
  * ============================================================================
  *
- * All services (auth, attendance, admin, dashboard, etc.) use this shared
- * Axios instance. It provides:
+ * All services (auth, user, dashboard, plus your module's services) use this
+ * shared Axios instance. It provides:
  *
  *   Request Interceptor:
  *     Reads auth tokens from localStorage via getAuthHeaders() and attaches

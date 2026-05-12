@@ -90,6 +90,9 @@ export const useAuthStore = create<AuthState>()(
           if (firebaseId !== undefined) {
             localStorage.setItem(STORAGE_KEYS.FIREBASE_ID, firebaseId);
           }
+          // Seed fresh activity so the idle timer doesn't fire against a stale
+          // timestamp from a prior session in this module (e.g. after SSO entry).
+          localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY, String(Date.now()));
         }
         set({
           userData: data,

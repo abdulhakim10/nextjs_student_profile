@@ -86,7 +86,13 @@
     "totalUsers": "Total Users",
     "activeUsers": "Active Users",
     "newThisMonth": "New This Month",
-    "growthRate": "Growth Rate"
+    "growthRate": "Growth Rate",
+    "aiAssistant": "AI Assistant",
+    "branch": "Branch",
+    "loadingBranches": "Loading branches...",
+    "selectBranch": "Select branch",
+    "allBranches": "All Branches",
+    "noBranchAvailable": "No branch available"
   },
   "greeting": {
     "morning": "Good Morning",
@@ -137,6 +143,34 @@
   "auth": {
     "sessionExpiredTitle": "You've been away!",
     "sessionExpiredDescription": "We logged you out to keep your account safe. Tap below to jump back in.",
-    "relogin": "Log In Again"
+    "relogin": "Log In Again",
+
+    "welcomeBack": "Welcome back",
+    "welcomeBackDesc": "Enter your organization code to continue",
+    "organizationCode": "Organization Code",
+    "enterAppcode": "Enter appcode",
+    "invalidAppcode": "Invalid appcode. Please try again.",
+    "failedValidateAppcode": "Failed to validate appcode. Please try again.",
+    "serverError": "Server error ({status}). Please try again.",
+    "validating": "Validating...",
+    "continueBtn": "Continue",
+
+    "signInTitle": "Sign In",
+    "signInDesc": "Enter your credentials to access the dashboard",
+    "username": "Username",
+    "password": "Password",
+    "enterUsername": "Enter your username",
+    "enterPassword": "Enter your password",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "signingIn": "Signing in...",
+    "signInBtn": "Sign In",
+    "changeOrganization": "Change Organization",
+
+    "appTagline": "Smart Admin Dashboard",
+    "secureFooter": "Secure admin dashboard",
+    "toggleTheme": "Toggle theme",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "organizationFallback": "Organization"
   }
 }
