@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/auth.service';
-import { APP_VERSION } from '@/config/constants';
+import { APP_VERSION, STORAGE_KEYS } from '@/config/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,9 @@ export default function LoginPage() {
 
       if (response.success && response.data) {
         setUserData(response.data, firebaseId);
+        // Direct login = user is now using this module standalone, not via SSO.
+        // Sever the SSO origin so future idle/logout goes to module's own login.
+        localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
         router.push('/dashboard');
       } else {
         setError(response.message || t('loginFailed'));

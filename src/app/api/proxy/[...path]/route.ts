@@ -12,7 +12,7 @@ const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || 'https://aws0
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://devapi02.awfatech.com';
 const UTILITIES_BASE_URL = process.env.NEXT_PUBLIC_UTILITIES_API_BASE_URL || API_BASE_URL;
 
-/** Paths that use the auth domain (aws01): appcode, login, logout */
+/** Paths that use the auth domain (aws01): appcode, login, logout, sso */
 function isAuthPath(path: string): boolean {
   const normalized = path.replace(/^\/+/, '');
   if (!normalized.startsWith('api/')) return false;
@@ -20,6 +20,7 @@ function isAuthPath(path: string): boolean {
   if (!rest.startsWith('v2/auth/')) return false;
   const afterAuth = rest.slice(8);
   if (afterAuth === 'appcode') return true;
+  if (afterAuth === 'sso/verify' || afterAuth === 'sso/generate') return true;
   if (/^[^/]+\/[^/]+\/login$/.test(afterAuth)) return true;
   if (/^[^/]+\/[^/]+\/logout$/.test(afterAuth)) return true;
   return false;

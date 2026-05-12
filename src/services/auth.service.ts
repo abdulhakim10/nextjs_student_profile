@@ -48,8 +48,10 @@ export const authService = {
   },
 
   verifySSOToken: async (ssoToken: string): Promise<ApiResponse<SSOVerifyData>> => {
+    // Go through the same-origin proxy to avoid CORS preflight against the
+    // auth domain. The proxy (`isAuthPath`) forwards sso/verify to AUTH_BASE_URL.
     const res = await fetch(
-      `${API_CONFIG.AUTH_BASE_URL}${API_ENDPOINTS.AUTH.SSO_VERIFY}`,
+      `${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.SSO_VERIFY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

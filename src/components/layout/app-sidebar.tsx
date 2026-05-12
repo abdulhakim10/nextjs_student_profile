@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/auth.service';
 import { API_CONFIG } from '@/config/api';
+import { getLogoutRedirectTarget } from '@/lib/auth';
 import { NAV_ITEMS, type NavItem } from '@/config/navigation';
 import {
   Sidebar,
@@ -43,13 +44,17 @@ export function AppSidebar() {
    *   3. Soft redirect to login (preserves appcode, unlike forceLogout)
    */
   const handleLogout = async () => {
+    // Resolve redirect target BEFORE clearing session — logout() removes SSO_RETURN_URL.
+    const target = getLogoutRedirectTarget();
     try {
       await authService.logout(API_CONFIG.DEFAULT_APP, API_CONFIG.DEFAULT_USER_TYPE);
     } catch {
       // Proceed even if backend call fails (e.g. network error, token already expired)
     } finally {
       logout();
-      router.push('/auth/login');
+      // Hard navigation — target may be cross-origin (main_view login for SSO users)
+      // and even for same-origin paths we want full state teardown post-logout.
+      window.location.href = target;
     }
   };
 

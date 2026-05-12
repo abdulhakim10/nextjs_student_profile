@@ -15,6 +15,7 @@ import React from 'react';
 import { Search, Sun, Moon, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { AppLauncher } from '@/components/layout/app-launcher';
 import { useTranslation } from '@/i18n';
 import { useAIChatStore } from '@/stores/ai-chat.store';
 
@@ -94,6 +95,7 @@ export function AppHeader() {
           </kbd>
         </button>
         <LanguageSwitcher />
+        <AppLauncher />
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="flex items-center justify-center rounded-lg border border-border/60 bg-muted/50 p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

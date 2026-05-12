@@ -81,6 +81,36 @@ export function getAuthHeaders(options?: { skipEncrypted?: boolean }): Record<st
 }
 
 // ---------------------------------------------------------------------------
+// SSO return URL
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate an SSO `from` URL before storing it as the idle-logout redirect
+ * target. Accept only http(s) — blocks `javascript:`, `data:`, and other
+ * dangerous schemes so a crafted URL can't redirect the user to attacker code.
+ */
+export function isSafeReturnUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Where to send the user after they log out — back to the SSO launcher's
+ * login page if they entered via SSO, otherwise the module's own /auth/login.
+ *
+ * IMPORTANT: call BEFORE invoking logout/clearSessionStorage — those flows
+ * remove SSO_RETURN_URL from localStorage.
+ */
+export function getLogoutRedirectTarget(): string {
+  if (typeof window === 'undefined') return '/auth/login';
+  return localStorage.getItem(STORAGE_KEYS.SSO_RETURN_URL) || '/auth/login';
+}
+
+// ---------------------------------------------------------------------------
 // Storage Cleanup
 // ---------------------------------------------------------------------------
 
@@ -97,6 +127,7 @@ export function clearSessionStorage() {
   localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_USER);
   localStorage.removeItem(STORAGE_KEYS.FIREBASE_ID);
   localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
+  localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
 
   // Clear branch selector so next login doesn't inherit stale branch
   sessionStorage.removeItem(SESSION_KEYS.BRANCH_SID);
@@ -116,6 +147,7 @@ export function clearAllAuthStorage() {
   localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_USER);
   localStorage.removeItem(STORAGE_KEYS.FIREBASE_ID);
   localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
+  localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
 
   // Appcode keys
   localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_KEY);

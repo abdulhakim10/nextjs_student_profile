@@ -5,8 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService, type SSOVerifyData } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
-import { Loader2, Link2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import type { AppcodeData, UserData } from '@/types';
+import { STORAGE_KEYS } from '@/config/constants';
+import { isSafeReturnUrl } from '@/lib/auth';
+import { ModuleTransition } from '@/components/layout/module-transition';
 
 function mapAppcodeData(data: SSOVerifyData): AppcodeData {
   return {
@@ -78,6 +81,16 @@ export default function SSOPage() {
 
         setAppcodeData(mapAppcodeData(response.data));
         setUserData(mapUserData(response.data));
+
+        // Remember the launcher's login URL so idle expiry returns the user
+        // there instead of the module's own /auth/login.
+        const from = searchParams.get('from');
+        if (from && isSafeReturnUrl(from)) {
+          localStorage.setItem(STORAGE_KEYS.SSO_RETURN_URL, from);
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
+        }
+
         router.replace('/dashboard');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'SSO verification failed');
@@ -111,20 +124,8 @@ export default function SSOPage() {
     );
   }
 
-  return (
-    <div className="p-8">
-      <div className="text-center mb-6">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 ring-4 ring-primary/5">
-          <Link2 className="h-6 w-6 text-primary" />
-        </div>
-        <h2 className="text-2xl font-bold tracking-tight">Single Sign-On</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Verifying your credentials...
-        </p>
-      </div>
-      <div className="flex justify-center py-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    </div>
-  );
+  // Default state (token in URL, verify in flight or just completed): show the
+  // branded transition overlay. Portals to <body> so the auth/layout's card
+  // chrome is fully covered.
+  return <ModuleTransition />;
 }

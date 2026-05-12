@@ -20,14 +20,21 @@ export default function AuthLayout({
   const { t } = useTranslation('auth');
   const { isAuthenticated, _hasHydrated } = useAuthStore();
 
+  // /auth/sso always runs to its own completion — it re-authenticates with a
+  // fresh token from the launcher and re-seeds LAST_ACTIVITY. If we bounced
+  // SSO arrivals on stale `isAuthenticated: true`, the receiver would land on
+  // /dashboard with stale state and the idle timer would fire immediately.
+  const isSSO = pathname.startsWith('/auth/sso');
+
   useEffect(() => {
     if (!_hasHydrated) return;
+    if (isSSO) return;
     if (isAuthenticated) {
       router.replace('/dashboard');
     }
-  }, [_hasHydrated, isAuthenticated, router]);
+  }, [_hasHydrated, isAuthenticated, isSSO, router]);
 
-  if (!_hasHydrated) {
+  if (!_hasHydrated || (isAuthenticated && !isSSO)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/50">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -35,12 +42,11 @@ export default function AuthLayout({
     );
   }
 
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  // /auth/sso renders its own full-screen ModuleTransition overlay — skip the
+  // brand chrome wrapper so the overlay sits at viewport scope (no transform-
+  // ancestor) and the user never sees the auth card behind it.
+  if (isSSO) {
+    return <>{children}</>;
   }
 
   return (

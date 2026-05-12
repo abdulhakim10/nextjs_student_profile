@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   FIREBASE_ID: 'firebase_id',
   /** UNIX ms of last user activity. Used to expire idle sessions across tab closes / sleep. */
   LAST_ACTIVITY: 'last_activity',
+  /** When set, idle "Log in again" redirects here (the SSO launcher's login page) instead of the module's own /auth/login. */
+  SSO_RETURN_URL: 'sso_return_url',
 } as const;
 
 export const SESSION_KEYS = {

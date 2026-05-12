@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { STORAGE_KEYS } from '@/config/constants';
+import { getLogoutRedirectTarget } from '@/lib/auth';
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;     // 15 min
 const ACTIVITY_THROTTLE_MS = 30 * 1000;     // throttle storage writes
@@ -36,13 +37,15 @@ export function useIdleTimeout(timeoutMs = IDLE_TIMEOUT_MS) {
 
   const confirmLogout = useCallback(() => {
     if (typeof window === 'undefined') return;
+    // Resolve the redirect target BEFORE logout — logout clears SSO_RETURN_URL.
+    const target = getLogoutRedirectTarget();
     // Invalidate the session BEFORE redirect — `/auth/login` bounces
     // authenticated users back to /dashboard via auth/layout.tsx, so we must
     // first flip `isAuthenticated` to false (Zustand persist writes the new
     // state to localStorage synchronously). Then hard-reload to tear down any
     // stale React state / open dialogs / in-flight requests.
     useAuthStore.getState().logout();
-    window.location.replace('/auth/login');
+    window.location.replace(target);
   }, []);
 
   const armTimer = useCallback(() => {
