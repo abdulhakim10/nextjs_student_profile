@@ -25,3 +25,8 @@ export const SUPPORTED_LOCALES: LocaleInfo[] = [
 ];
 
 export const DEFAULT_LOCALE: Locale = 'ms';
+
+/** Type guard — narrows an unknown string (e.g. URL param) to a supported Locale. */
+export function isLocale(value: unknown): value is Locale {
+  return value === 'ms' || value === 'en';
+}
