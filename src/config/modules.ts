@@ -5,6 +5,6 @@
  *
  * Receivers never read module URLs (every tile click routes through
  * `${main}/dashboard?launch=<key>` and main resolves the destination via
- * its own MODULE_URLS + LIVE_MODULES). So this file only exports the type.
+ * its own MODULE_URLS registry). So this file only exports the type.
  */
 export type ModuleKey = 'attendance' | 'leave' | 'recruitment' | 'salary' | 'claim';

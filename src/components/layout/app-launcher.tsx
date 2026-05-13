@@ -32,15 +32,15 @@ type TileBase = {
 };
 
 /** Discriminated by `kind`. Module tiles route via main's `?launch=` so main
- *  is the single source of truth for which modules are live (it falls back to
- *  /maintenance for not-yet-deployed modules via `isModuleLive()`). */
+ *  is the single source of truth for the SSO handshake (shared secret +
+ *  module URL registry live there, not in receivers). */
 type Tile =
   | (TileBase & { kind: 'home' })
   | (TileBase & { kind: 'module'; moduleKey: ModuleKey });
 
-// Mirrors main_view's App Launcher PRO list. Adding a module here is enough —
-// main_view decides at runtime whether it SSO-launches or shows /maintenance,
-// based on its own `NEXT_PUBLIC_LIVE_MODULES` env var.
+// Mirrors main_view's App Launcher subscribed list. Adding a module here is
+// enough — main_view handles the SSO redirect destination via its own
+// MODULE_URLS registry.
 const TILES: Tile[] = [
   { kind: 'home',   label: 'Main Dashboard', icon: Home,      gradient: 'from-slate-500 to-slate-600' },
   { kind: 'module', moduleKey: 'attendance',  label: 'Attendance',  icon: Clock,     gradient: 'from-violet-500 to-indigo-500' },

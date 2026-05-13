@@ -90,6 +90,7 @@ export default function SSOPage() {
         if (from && isSafeReturnUrl(from)) {
           localStorage.setItem(STORAGE_KEYS.SSO_RETURN_URL, from);
         } else {
+          // Defensive: clear any stale value from a previous SSO session.
           localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
         }
 
