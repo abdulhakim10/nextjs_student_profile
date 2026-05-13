@@ -22,9 +22,7 @@ import {
 } from '@/components/ui/popover';
 import { STORAGE_KEYS } from '@/config/constants';
 import { type ModuleKey } from '@/config/modules';
-
-/** Slug for an unbuilt module whose tile routes to main's /maintenance page. */
-type MaintenanceKey = 'claims' | 'recruitment' | 'leave';
+import { useLanguageStore } from '@/stores/language.store';
 
 type TileBase = {
   label: string;
@@ -33,21 +31,23 @@ type TileBase = {
   gradient: string;
 };
 
-/** Discriminated by `kind` so each destination carries only the fields it needs. */
+/** Discriminated by `kind`. Module tiles route via main's `?launch=` so main
+ *  is the single source of truth for the SSO handshake (shared secret +
+ *  module URL registry live there, not in receivers). */
 type Tile =
   | (TileBase & { kind: 'home' })
-  | (TileBase & { kind: 'module'; moduleKey: ModuleKey })
-  | (TileBase & { kind: 'maintenance'; maintenanceKey: MaintenanceKey });
+  | (TileBase & { kind: 'module'; moduleKey: ModuleKey });
 
-// Mirrors main_view's App Launcher PRO list. Built modules SSO via main;
-// unbuilt ones route to main's /maintenance page.
+// Mirrors main_view's App Launcher subscribed list. Adding a module here is
+// enough — main_view handles the SSO redirect destination via its own
+// MODULE_URLS registry.
 const TILES: Tile[] = [
-  { kind: 'home', label: 'Main Dashboard', icon: Home, gradient: 'from-slate-500 to-slate-600' },
-  { kind: 'module', moduleKey: 'attendance', label: 'Attendance', icon: Clock, gradient: 'from-violet-500 to-indigo-500' },
-  { kind: 'module', moduleKey: 'salary', label: 'Payroll', icon: Wallet, gradient: 'from-amber-500 to-orange-500' },
-  { kind: 'maintenance', maintenanceKey: 'claims', label: 'Claims', icon: Receipt, gradient: 'from-rose-500 to-pink-500' },
-  { kind: 'maintenance', maintenanceKey: 'recruitment', label: 'Recruitment', icon: Briefcase, gradient: 'from-sky-500 to-cyan-500' },
-  { kind: 'maintenance', maintenanceKey: 'leave', label: 'Leave', icon: Plane, gradient: 'from-emerald-500 to-teal-500' },
+  { kind: 'home',   label: 'Main Dashboard', icon: Home,      gradient: 'from-slate-500 to-slate-600' },
+  { kind: 'module', moduleKey: 'attendance',  label: 'Attendance',  icon: Clock,     gradient: 'from-violet-500 to-indigo-500' },
+  { kind: 'module', moduleKey: 'salary',      label: 'Payroll',     icon: Wallet,    gradient: 'from-amber-500 to-orange-500' },
+  { kind: 'module', moduleKey: 'claim',       label: 'Claims',      icon: Receipt,   gradient: 'from-rose-500 to-pink-500' },
+  { kind: 'module', moduleKey: 'recruitment', label: 'Recruitment', icon: Briefcase, gradient: 'from-sky-500 to-cyan-500' },
+  { kind: 'module', moduleKey: 'leave',       label: 'Leave',       icon: Plane,     gradient: 'from-emerald-500 to-teal-500' },
 ];
 
 /**
@@ -55,16 +55,21 @@ const TILES: Tile[] = [
  * main_view's dashboard auto-launch effect — the key name MUST match
  * `SSO_LAUNCH_QUERY_KEY` in main_view/src/lib/sso.ts (kept inline here
  * since receivers don't share that module).
+ *
+ * `lang=<code>` carries the user's locale across origins. main_view's
+ * dashboard reads it and updates its own language store before any further
+ * SSO hop, so the receiver-to-receiver chain doesn't reset to main's
+ * stale default. The key matches `SSO_LANG_QUERY_KEY` in main_view's sso.ts.
  */
 const LAUNCH_QUERY_KEY = 'launch';
-function buildTargetUrl(mainOrigin: string, tile: Tile): string {
+const LANG_QUERY_KEY = 'lang';
+function buildTargetUrl(mainOrigin: string, tile: Tile, locale: string): string {
+  const langQuery = `${LANG_QUERY_KEY}=${encodeURIComponent(locale)}`;
   switch (tile.kind) {
     case 'home':
-      return `${mainOrigin}/dashboard`;
+      return `${mainOrigin}/dashboard?${langQuery}`;
     case 'module':
-      return `${mainOrigin}/dashboard?${LAUNCH_QUERY_KEY}=${encodeURIComponent(tile.moduleKey)}`;
-    case 'maintenance':
-      return `${mainOrigin}/maintenance?module=${encodeURIComponent(tile.maintenanceKey)}`;
+      return `${mainOrigin}/dashboard?${LAUNCH_QUERY_KEY}=${encodeURIComponent(tile.moduleKey)}&${langQuery}`;
   }
 }
 
@@ -74,8 +79,6 @@ function tileKey(tile: Tile): string {
       return 'home';
     case 'module':
       return tile.moduleKey;
-    case 'maintenance':
-      return tile.maintenanceKey;
   }
 }
 
@@ -109,7 +112,10 @@ export function AppLauncher() {
   // identical across all receivers (base/attendance/salary).
   const handleSelect = (tile: Tile) => {
     setOpen(false);
-    window.location.href = buildTargetUrl(mainOrigin, tile);
+    // Snapshot locale at click time — passed in URL so main's dashboard can
+    // sync its store before the next SSO hop reads it from there.
+    const locale = useLanguageStore.getState().locale;
+    window.location.href = buildTargetUrl(mainOrigin, tile, locale);
   };
 
   return (

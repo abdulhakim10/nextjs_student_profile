@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
+import { useLanguageStore } from '@/stores/language.store';
+import { isLocale } from '@/i18n/types';
 import { authService, type SSOVerifyData } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
@@ -88,7 +90,18 @@ export default function SSOPage() {
         if (from && isSafeReturnUrl(from)) {
           localStorage.setItem(STORAGE_KEYS.SSO_RETURN_URL, from);
         } else {
+          // Defensive: clear any stale value from a previous SSO session.
           localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
+        }
+
+        // Carry the launcher's locale across origins — cross-origin localStorage
+        // is sandboxed so the URL is our only channel. Apply BEFORE redirect so
+        // the dashboard renders in the right language on first paint.
+        const lang = searchParams.get('lang');
+        if (lang && isLocale(lang)) {
+          if (useLanguageStore.getState().locale !== lang) {
+            useLanguageStore.getState().setLocale(lang);
+          }
         }
 
         router.replace('/dashboard');
