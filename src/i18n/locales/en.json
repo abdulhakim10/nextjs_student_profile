@@ -30,6 +30,16 @@
     "settings": "Settings",
     "tutorial": "Tutorial"
   },
+  "appLauncher": {
+    "ariaLabel": "Switch module",
+    "switchTo": "Switch to",
+    "home": "Main Dashboard",
+    "attendance": "Attendance",
+    "payroll": "Payroll",
+    "claims": "Claims",
+    "recruitment": "Recruitment",
+    "leave": "Leave"
+  },
   "sidebar": {
     "appName": "Admin Dashboard",
     "dashboard": "Dashboard"
