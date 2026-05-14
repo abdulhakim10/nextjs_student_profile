@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLanguageStore } from '@/stores/language.store';
 import { isLocale } from '@/i18n/types';
+import { isTheme } from '@/lib/theme';
 import { authService, type SSOVerifyData } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
@@ -61,6 +63,7 @@ export default function SSOPage() {
   const token = searchParams.get('token');
 
   const { setAppcodeData, setUserData, _hasHydrated } = useAuthStore();
+  const { setTheme } = useTheme();
   const [error, setError] = useState<string | null>(null);
   const verifyAttempted = useRef(false);
 
@@ -104,6 +107,14 @@ export default function SSOPage() {
           }
         }
 
+        // Same plumbing for theme — `next-themes` persists per-origin so a
+        // user toggling dark mode on main would land on a light-mode module
+        // without this. Preference (light|dark|system), not resolvedTheme.
+        const theme = searchParams.get('theme');
+        if (theme && isTheme(theme)) {
+          setTheme(theme);
+        }
+
         router.replace('/dashboard');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'SSO verification failed');
@@ -111,7 +122,7 @@ export default function SSOPage() {
     };
 
     verify();
-  }, [_hasHydrated, token, setAppcodeData, setUserData, router]);
+  }, [_hasHydrated, token, setAppcodeData, setUserData, setTheme, router]);
 
   if (error) {
     return (

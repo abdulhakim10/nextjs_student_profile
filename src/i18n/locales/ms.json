@@ -30,6 +30,16 @@
     "settings": "Tetapan",
     "tutorial": "Tutorial"
   },
+  "appLauncher": {
+    "ariaLabel": "Tukar modul",
+    "switchTo": "Tukar ke",
+    "home": "Papan Pemuka Utama",
+    "attendance": "Kehadiran",
+    "payroll": "Gaji",
+    "claims": "Tuntutan",
+    "recruitment": "Pengambilan",
+    "leave": "Cuti"
+  },
   "sidebar": {
     "appName": "Papan Pemuka Admin",
     "dashboard": "Papan Pemuka"
