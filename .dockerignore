@@ -1,10 +1,41 @@
+# Dependencies and build output
 node_modules
 .next
-.env.local
-.env*.local
-npm-debug.log*
+out
+build
+coverage
+
+# Env files — none ship into the build context.
+# NEXT_PUBLIC_* values are passed as --build-arg from GitLab CI variables;
+# the Dockerfile's `ARG` + `ENV` lines forward them into `next build`.
+# Server-side secrets (ANTHROPIC_API_KEY, EMAIL_API_KEY) come from AWS
+# Secrets Manager via the ECS task def at runtime.
+.env
+.env.*
+
+# Git
 .git
 .gitignore
+.gitlab-ci.yml
+.gitmodules
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+
+# Logs / debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# Misc
 README.md
 Dockerfile
 .dockerignore
+bash.exe.stackdump
+*.tsbuildinfo
+next-env.d.ts
+.vercel

@@ -1,0 +1,95 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  DOCKER_DRIVER: overlay2
+  GIT_SUBMODULE_STRATEGY: none
+
+image: docker:git
+services:
+  - docker:25.0.2-dind
+
+before_script:
+  - echo "Logging into GitLab Container Registry..."
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+# ─────────────────────────────────────────────────────────────────────────
+# TEMPLATE NOTE
+# base_view is the canonical chrome template — when forking it for a new
+# HRM module, this pipeline is the starting shape. Customize per module:
+#   - Add ARG/ENV pairs in Dockerfile + matching --build-arg below for any
+#     module-specific NEXT_PUBLIC_* the new code uses (e.g. attendance_view
+#     adds NEXT_PUBLIC_ATTENDANCE_API_BASE_URL, salary_view adds
+#     NEXT_PUBLIC_SALARY_API_BASE_URL).
+#   - Set AWS_REPO_NAME GitLab variable to the module's ECR repo name.
+#   - Set the 7 NEXT_PUBLIC_* GitLab variables listed below.
+# ─────────────────────────────────────────────────────────────────────────
+#
+# Build stage
+# NEXT_PUBLIC_* values come from GitLab CI/CD variables (Settings → CI/CD →
+# Variables) and are forwarded as --build-arg to `next build`, where they
+# get baked into the client JS bundle. Not secret — every value ends up in
+# the browser anyway. Protect any client-baked API keys via the upstream
+# platform's allowlist (e.g. GCP HTTP referrer restrictions for Maps).
+#
+# Server-side runtime secrets (ANTHROPIC_API_KEY, EMAIL_API_KEY) are NOT
+# defined here. ECS injects them from AWS Secrets Manager at container
+# start via the task definition's `secrets` block.
+#
+# Required GitLab variables (baseline 7 — fork-specific vars must be added):
+#   NEXT_PUBLIC_AUTH_API_BASE_URL
+#   NEXT_PUBLIC_API_BASE_URL
+#   NEXT_PUBLIC_UTILITIES_API_BASE_URL
+#   NEXT_PUBLIC_APP_NAME
+#   NEXT_PUBLIC_API_VERSION
+#   NEXT_PUBLIC_DEFAULT_APP
+#   NEXT_PUBLIC_DEFAULT_USER_TYPE
+build:
+  stage: build
+  script:
+    - |
+      for v in NEXT_PUBLIC_AUTH_API_BASE_URL NEXT_PUBLIC_API_BASE_URL \
+               NEXT_PUBLIC_UTILITIES_API_BASE_URL NEXT_PUBLIC_APP_NAME \
+               NEXT_PUBLIC_API_VERSION NEXT_PUBLIC_DEFAULT_APP \
+               NEXT_PUBLIC_DEFAULT_USER_TYPE; do
+        if [ -z "$(eval echo \$$v)" ]; then echo "ERROR: $v is not set in GitLab CI variables"; exit 1; fi
+      done
+    - |
+      docker build \
+        --build-arg NEXT_PUBLIC_AUTH_API_BASE_URL="$NEXT_PUBLIC_AUTH_API_BASE_URL" \
+        --build-arg NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
+        --build-arg NEXT_PUBLIC_UTILITIES_API_BASE_URL="$NEXT_PUBLIC_UTILITIES_API_BASE_URL" \
+        --build-arg NEXT_PUBLIC_APP_NAME="$NEXT_PUBLIC_APP_NAME" \
+        --build-arg NEXT_PUBLIC_API_VERSION="$NEXT_PUBLIC_API_VERSION" \
+        --build-arg NEXT_PUBLIC_DEFAULT_APP="$NEXT_PUBLIC_DEFAULT_APP" \
+        --build-arg NEXT_PUBLIC_DEFAULT_USER_TYPE="$NEXT_PUBLIC_DEFAULT_USER_TYPE" \
+        -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+  only:
+    - main
+
+# Deploy stage: push the built image to AWS ECR.
+# The ECS task definition / service deploy is managed manually (point the
+# task def at the new tag in the AWS console).
+deploy:
+  stage: deploy
+  image: docker:25.0.2
+  services:
+    - docker:25.0.2-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - apk add --no-cache aws-cli
+  script:
+    - echo "Pulling image from GitLab Registry..."
+    - docker pull $IMAGE_TAG
+    - echo "Logging into AWS ECR..."
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ECR_URI
+    - echo "Tagging and pushing image to ECR..."
+    - docker tag $IMAGE_TAG $AWS_ECR_URI/$AWS_REPO_NAME:$CI_COMMIT_SHORT_SHA
+    - docker tag $IMAGE_TAG $AWS_ECR_URI/$AWS_REPO_NAME:latest
+    - docker push $AWS_ECR_URI/$AWS_REPO_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $AWS_ECR_URI/$AWS_REPO_NAME:latest
+  only:
+    - main
