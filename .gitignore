@@ -30,9 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
-.env
-.env*.local
+# env files — never commit any .env* (.env, .env.development, .env.production,
+# .env.local, etc.). NEXT_PUBLIC_* values come from GitLab CI variables →
+# --build-arg; local copies of .env* stay on disk for `npm run dev` and
+# `npm run build` testing but never ship to git.
+.env*
+# Exception: .env.example IS committed — it's the documentation template that
+# tells anyone forking base_view which NEXT_PUBLIC_* vars need to be wired up.
+!.env.example
 
 # vercel
 .vercel
