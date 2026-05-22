@@ -15,7 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { Home, Clock, Wallet, Receipt, Briefcase, Plane, type LucideIcon } from 'lucide-react';
+import { Home, Clock, Wallet, Receipt, Briefcase, Plane, FileText, type LucideIcon } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -32,7 +32,7 @@ type LauncherKey = keyof Translations['appLauncher'];
 
 /** Accent palette for the "you are here" highlight — keyed names so the
  *  Tailwind JIT can see the literal class strings below and emit the CSS. */
-type Accent = 'violet' | 'amber' | 'rose' | 'sky' | 'emerald';
+type Accent = 'violet' | 'amber' | 'rose' | 'sky' | 'emerald' | 'teal';
 
 /** Per-accent class bundle. Each module tile picks one matching its gradient
  *  so the active highlight reads as "this tile's color got brighter", not as
@@ -77,6 +77,13 @@ const ACCENT: Record<
     dot: 'bg-emerald-500',
     glow: 'shadow-emerald-500/50',
   },
+  teal: {
+    ring: 'ring-teal-500',
+    text: 'text-teal-600 dark:text-teal-400',
+    bg: 'bg-teal-500/10',
+    dot: 'bg-teal-500',
+    glow: 'shadow-teal-500/50',
+  },
 };
 
 type TileBase = {
@@ -109,6 +116,7 @@ const TILES: Tile[] = [
   { kind: 'module', moduleKey: 'claim',        labelKey: 'claims',      icon: Receipt,   gradient: 'from-rose-500 to-pink-500',       accent: 'rose' },
   { kind: 'module', moduleKey: 'recruitment',  labelKey: 'recruitment', icon: Briefcase, gradient: 'from-sky-500 to-cyan-500',         accent: 'sky' },
   { kind: 'module', moduleKey: 'leave',        labelKey: 'leave',       icon: Plane,     gradient: 'from-emerald-500 to-teal-500',     accent: 'emerald' },
+  { kind: 'module', moduleKey: 'cms',          labelKey: 'cms',         icon: FileText,  gradient: 'from-teal-500 to-cyan-500',         accent: 'teal' },
 ];
 
 /**

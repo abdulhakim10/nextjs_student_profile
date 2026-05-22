@@ -38,7 +38,8 @@
     "payroll": "Gaji",
     "claims": "Tuntutan",
     "recruitment": "Pengambilan",
-    "leave": "Cuti"
+    "leave": "Cuti",
+    "cms": "CMS"
   },
   "sidebar": {
     "appName": "Papan Pemuka Admin",

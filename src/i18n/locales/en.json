@@ -38,7 +38,8 @@
     "payroll": "Payroll",
     "claims": "Claims",
     "recruitment": "Recruitment",
-    "leave": "Leave"
+    "leave": "Leave",
+    "cms": "CMS"
   },
   "sidebar": {
     "appName": "Admin Dashboard",

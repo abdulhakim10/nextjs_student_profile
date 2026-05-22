@@ -7,7 +7,7 @@
  * `${main}/dashboard?launch=<key>` and main resolves the destination via
  * its own MODULE_URLS registry.
  */
-export type ModuleKey = 'attendance' | 'leave' | 'recruitment' | 'salary' | 'claim';
+export type ModuleKey = 'attendance' | 'leave' | 'recruitment' | 'salary' | 'claim' | 'cms';
 
 /**
  * The module this build of the app represents. The App Launcher reads it to
