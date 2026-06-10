@@ -12,7 +12,7 @@ import {
   CommandItem,
   CommandSeparator,
 } from '@/components/ui/command';
-import { NAV_ITEMS } from '@/config/navigation';
+import { navItemsForRole } from '@/config/navigation';
 import { useTranslation } from '@/i18n';
 import { useAIChatStore } from '@/stores/ai-chat.store';
 import {
@@ -65,7 +65,9 @@ export function CommandPalette() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const navItems = NAV_ITEMS.flatMap((item) => {
+  // The palette only mounts for admins (app-shell.tsx) — list the admin
+  // tab set so the hidden My Page tab doesn't resurface here.
+  const navItems = navItemsForRole('admin').flatMap((item) => {
     if (item.children) {
       return item.children.map((child) => ({
         title: tNav(child.titleKey),

@@ -13,6 +13,8 @@ export const STORAGE_KEYS = {
   LAST_ACTIVITY: 'last_activity',
   /** When set, idle "Log in again" redirects here (the SSO launcher's login page) instead of the module's own /auth/login. */
   SSO_RETURN_URL: 'sso_return_url',
+  /** sessionStorage (per-tab): view-role override ('admin' | 'employee') carried from the hub via the SSO `role` param — resolveViewRole() applies it downgrade-only. */
+  ROLE_OVERRIDE: 'role_override',
 } as const;
 
 export const SESSION_KEYS = {

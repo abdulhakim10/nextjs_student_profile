@@ -13,6 +13,7 @@ import { ArrowLeft, AlertCircle } from 'lucide-react';
 import type { AppcodeData, UserData } from '@/types';
 import { STORAGE_KEYS } from '@/config/constants';
 import { isSafeReturnUrl } from '@/lib/auth';
+import { resolveViewRole, roleHome } from '@/lib/role';
 import { ModuleTransition } from '@/components/layout/module-transition';
 
 function mapAppcodeData(data: SSOVerifyData): AppcodeData {
@@ -38,7 +39,7 @@ function mapUserData(data: SSOVerifyData): UserData {
     password_expired_in: '',
     server_id: data.server_id,
     user_id: data.user_id,
-    user_sid: data.user_sid,
+    user_sid: String(data.user_sid),
     user_name: data.user_name,
     user_image: data.user_image || '',
     user_phone_num: data.user_phone_num || '',
@@ -115,14 +116,35 @@ export default function SSOPage() {
           setTheme(theme);
         }
 
-        router.replace('/dashboard');
+        // View-role override from the hub — employee-view cards send
+        // `role=employee` (admins previewing the employee view stay in it
+        // here); tiles and admin-view cards send `role=admin`, which never
+        // escalates a real employee (resolveViewRole is downgrade-only).
+        const roleParam = searchParams.get('role');
+        if (roleParam === 'admin' || roleParam === 'employee') {
+          sessionStorage.setItem(STORAGE_KEYS.ROLE_OVERRIDE, roleParam);
+        } else {
+          sessionStorage.removeItem(STORAGE_KEYS.ROLE_OVERRIDE);
+        }
+
+        // Deep-link target from the launcher (`next` — contract with
+        // main_view's lib/sso.ts SSO_NEXT_QUERY_KEY). Internal paths only:
+        // must start with '/' and not '//' so a crafted URL can't bounce
+        // the user off-origin.
+        const next = searchParams.get('next');
+        const target =
+          next && next.startsWith('/') && !next.startsWith('//')
+            ? next
+            // Admin → /overview; employee → /my-page (see lib/role.ts).
+            : roleHome(resolveViewRole(response.data));
+        router.replace(target);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'SSO verification failed');
       }
     };
 
     verify();
-  }, [_hasHydrated, token, setAppcodeData, setUserData, setTheme, router]);
+  }, [_hasHydrated, token, searchParams, setAppcodeData, setUserData, setTheme, router]);
 
   if (error) {
     return (

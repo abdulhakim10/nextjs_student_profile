@@ -1,26 +1,20 @@
 import { AuthGuard } from '@/components/auth/auth-guard';
-import { AppSidebar } from '@/components/layout/app-sidebar';
-import { AppHeader } from '@/components/layout/app-header';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AIChatPanel } from '@/components/ai/ai-chat-panel';
-import { CommandPalette } from '@/components/command-palette';
+import { RoleRouteGuard } from '@/components/auth/role-route-guard';
+import { AppShell } from '@/components/layout/app-shell';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // RoleRouteGuard keeps employees (non-admin system_level) on My Page;
+  // AppShell renders the full chrome and mounts the AI/search panels for
+  // admins only.
   return (
     <AuthGuard>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <AppHeader />
-          <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 dot-pattern">{children}</main>
-        </SidebarInset>
-        <AIChatPanel />
-        <CommandPalette />
-      </SidebarProvider>
+      <RoleRouteGuard>
+        <AppShell>{children}</AppShell>
+      </RoleRouteGuard>
     </AuthGuard>
   );
 }

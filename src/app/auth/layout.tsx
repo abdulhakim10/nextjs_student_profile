@@ -5,8 +5,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthStore } from '@/stores/auth.store';
+import { resolveViewRole, roleHome } from '@/lib/role';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
-import { Loader2, Sun, Moon, ShieldCheck, Fingerprint } from 'lucide-react';
+import { Loader2, Sun, Moon, ShieldCheck, Building2 } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 
 export default function AuthLayout({
@@ -18,21 +19,22 @@ export default function AuthLayout({
   const pathname = usePathname();
   const { setTheme, theme } = useTheme();
   const { t } = useTranslation('auth');
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated, userData } = useAuthStore();
 
   // /auth/sso always runs to its own completion — it re-authenticates with a
   // fresh token from the launcher and re-seeds LAST_ACTIVITY. If we bounced
   // SSO arrivals on stale `isAuthenticated: true`, the receiver would land on
-  // /dashboard with stale state and the idle timer would fire immediately.
+  // /overview with stale state and the idle timer would fire immediately.
   const isSSO = pathname.startsWith('/auth/sso');
 
   useEffect(() => {
     if (!_hasHydrated) return;
     if (isSSO) return;
     if (isAuthenticated) {
-      router.replace('/dashboard');
+      // Admin → /overview; employee → /my-page (see lib/role.ts).
+      router.replace(roleHome(resolveViewRole(userData)));
     }
-  }, [_hasHydrated, isAuthenticated, isSSO, router]);
+  }, [_hasHydrated, isAuthenticated, isSSO, userData, router]);
 
   if (!_hasHydrated || (isAuthenticated && !isSSO)) {
     return (
@@ -109,8 +111,8 @@ export default function AuthLayout({
               {/* Tiny dot grid for texture */}
               <div className="absolute inset-0 opacity-15 [background-image:radial-gradient(circle_at_25%_25%,white_1px,transparent_1px)] [background-size:6px_6px]" />
 
-              {/* Brand icon — swap for your module's mark (default: fingerprint) */}
-              <Fingerprint
+              {/* Brand icon — building, neutral default (swap per module when forking) */}
+              <Building2
                 className="relative h-8 w-8 text-primary-foreground"
                 strokeWidth={1.75}
                 style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.25))' }}

@@ -1,6 +1,6 @@
 import type ms from './locales/ms.json';
 
-/** Full translation shape — derived from the default (Malay) locale */
+/** Full translation shape — derived from ms.json, the keyset source of truth */
 export type Translations = typeof ms;
 
 /** Top-level namespace keys */
@@ -24,7 +24,7 @@ export const SUPPORTED_LOCALES: LocaleInfo[] = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
 ];
 
-export const DEFAULT_LOCALE: Locale = 'ms';
+export const DEFAULT_LOCALE: Locale = 'en';
 
 /** Type guard — narrows an unknown string (e.g. URL param) to a supported Locale. */
 export function isLocale(value: unknown): value is Locale {

@@ -307,11 +307,13 @@ export const NAV_ITEMS: NavItem[] = [
 		titleKey: "dashboard",
 		href: "/dashboard",
 		icon: LayoutDashboard,
+		roles: ["admin"], // role-split view: which roles see this tab (lib/role.ts)
 	},
 	{
 		titleKey: "inventory", // matches key in i18n navigation namespace
 		href: "/inventory",
 		icon: Package,
+		roles: ["admin"],
 		children: [
 			// optional sub-items
 			{ titleKey: "inventoryList", href: "/inventory" },
@@ -320,6 +322,10 @@ export const NAV_ITEMS: NavItem[] = [
 	},
 ];
 ```
+
+Admin-view pages also need their path prefix added to `ADMIN_ROUTE_PREFIXES`
+in `src/components/auth/role-route-guard.tsx` so employees get redirected
+away from them.
 
 ### 7. Add Translations
 
@@ -620,15 +626,18 @@ export interface NavItem {
 	titleKey: NavigationKey; // Key in i18n "navigation" namespace
 	href: string;
 	icon: LucideIcon;
+	roles: Role[]; // role-split view — 'admin' | 'employee' (lib/role.ts)
 	children?: NavChild[]; // Optional nested items
 }
 
 export const NAV_ITEMS: NavItem[] = [
-	{ titleKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+	{ titleKey: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
 ];
 ```
 
-The sidebar (`src/components/layout/app-sidebar.tsx`) renders these items with:
+The sidebar (`src/components/layout/app-sidebar.tsx`) renders the tabs for
+the current user's role via `navItemsForRole(deriveRole(userData))` — admins
+get the admin tabs (no My Page), employees get ONLY My Page — with:
 
 - Active state detection based on current pathname
 - Collapsible children groups
@@ -636,7 +645,7 @@ The sidebar (`src/components/layout/app-sidebar.tsx`) renders these items with:
 
 ### Command Palette
 
-The command palette (`Ctrl+K` / `Cmd+K`) auto-reads `NAV_ITEMS` to provide navigation search. No extra configuration needed when you add items to `NAV_ITEMS`.
+The command palette (`Ctrl+K` / `Cmd+K`) reads `navItemsForRole('admin')` to provide navigation search (it only mounts for admins — see `app-shell.tsx`). No extra configuration needed when you add items to `NAV_ITEMS`.
 
 ### Breadcrumbs
 

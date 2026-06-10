@@ -1,10 +1,30 @@
+/**
+ * Base-URL cascade
+ * ----------------
+ * `API_BASE_URL` is the single root. Every per-service URL is optional —
+ * when its env var is empty, it falls back to `API_BASE_URL`.
+ *
+ * - Production: set only `NEXT_PUBLIC_API_BASE_URL` (one domain serves
+ *   every service path). All per-service vars stay empty.
+ * - Development: set each per-service var in `.env.development` to point
+ *   at the matching local backend (different host/port per service).
+ *
+ * Code shouldn't read these env vars directly — import the exported
+ * constants below so the cascade stays in one place.
+ */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://aws01.awfatech.com';
+
+function resolveServiceUrl(serviceVar: string | undefined): string {
+  return serviceVar || API_BASE_URL;
+}
+
+export const AUTH_BASE_URL = resolveServiceUrl(process.env.NEXT_PUBLIC_AUTH_API_BASE_URL);
+export const UTILITIES_BASE_URL = resolveServiceUrl(process.env.NEXT_PUBLIC_UTILITIES_API_BASE_URL);
+
 export const API_CONFIG = {
-  // Auth endpoints (appcode, login, logout) use this domain
-  AUTH_BASE_URL: process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || 'https://aws01.awfatech.com',
-  // Utilities service endpoints
-  UTILITIES_BASE_URL: process.env.NEXT_PUBLIC_UTILITIES_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://devapi02.awfatech.com',
-  // All other APIs use this domain
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://devapi02.awfatech.com',
+  AUTH_BASE_URL,
+  UTILITIES_BASE_URL,
+  API_BASE_URL,
   // Client-side: use proxy to avoid CORS
   BASE_URL: '/api/proxy',
   VERSION: process.env.NEXT_PUBLIC_API_VERSION || 'v2',

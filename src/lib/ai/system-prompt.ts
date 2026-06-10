@@ -42,7 +42,7 @@ Active branch: ${branchName ? `"${branchName}" (sid="${sid}")` : `sid="${sid}"`}
 
 const QUICK_REPLIES = `## Quick Replies
 Use <<<QUICK_REPLIES>>>...<<<END_QUICK_REPLIES>>> for option buttons. One per line, plain text.
-For navigation: \`[GO:/path] Label\`. Available pages: /dashboard, /users, /tutorial, /settings.`;
+For navigation: \`[GO:/path] Label\`. Available pages: /overview, /dashboard, /users, /tutorial, /settings.`;
 
 const CORE_RULES = `## Important Rules
 1. **Use tools for data.** Never fabricate data. Always call the appropriate tool and report actual results.

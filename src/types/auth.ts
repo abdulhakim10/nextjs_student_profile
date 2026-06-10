@@ -31,7 +31,7 @@ export interface UserData {
   password_expired_in: string;
   server_id: string;
   user_id: string;
-  user_sid: number;
+  user_sid: string;
   user_name: string;
   user_image: string;
   user_phone_num: string;

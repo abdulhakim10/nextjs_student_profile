@@ -15,8 +15,8 @@ interface I18nContextValue {
 }
 
 const I18nContext = createContext<I18nContextValue>({
-  locale: 'ms',
-  translations: ms,
+  locale: 'en',
+  translations: en,
 });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {

@@ -19,3 +19,32 @@ export type ModuleKey = 'attendance' | 'leave' | 'recruitment' | 'salary' | 'cla
  * ModuleKey (e.g. `'claim'` for claim_view).
  */
 export const CURRENT_MODULE: ModuleKey | null = null;
+
+/**
+ * Which `system_access` keys grant a module's App Launcher tile — mirror of
+ * main_view's MODULE_ACCESS_KEYS (access-structure decision, 2026-06-06):
+ *   hrms → attendance · leave → leave · salary → salary · claim → claim
+ *   cms → cms · recruitment → recruitment
+ * NOTE: the school-side `attendance` key is student attendance, NOT the HRM
+ * staff-attendance module — staff attendance is `hrms`.
+ */
+export const MODULE_ACCESS_KEYS: Record<ModuleKey, string[]> = {
+  attendance: ['hrms'],
+  leave: ['leave'],
+  salary: ['salary'],
+  claim: ['claim'],
+  cms: ['cms'],
+  recruitment: ['recruitment'],
+};
+
+/** True when the user's `system_access` (pipe-delimited) unlocks the module.
+ *  Exact key matching, same as main_view's hasAccess — stricter than the
+ *  backend's substring checks, so launcher-visible ⊆ backend-authorized. */
+export function canAccessModule(
+  systemAccess: string | undefined,
+  key: ModuleKey,
+): boolean {
+  if (!systemAccess) return false;
+  const keys = systemAccess.split('|').map((k) => k.trim().toLowerCase());
+  return MODULE_ACCESS_KEYS[key].some((rk) => keys.includes(rk.toLowerCase()));
+}

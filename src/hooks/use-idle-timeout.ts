@@ -40,7 +40,7 @@ export function useIdleTimeout(timeoutMs = IDLE_TIMEOUT_MS) {
     // Resolve the redirect target BEFORE logout — logout clears SSO_RETURN_URL.
     const target = getLogoutRedirectTarget();
     // Invalidate the session BEFORE redirect — `/auth/login` bounces
-    // authenticated users back to /dashboard via auth/layout.tsx, so we must
+    // authenticated users back to /overview via auth/layout.tsx, so we must
     // first flip `isAuthenticated` to false (Zustand persist writes the new
     // state to localStorage synchronously). Then hard-reload to tear down any
     // stale React state / open dialogs / in-flight requests.
