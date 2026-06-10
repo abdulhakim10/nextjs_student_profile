@@ -2,35 +2,42 @@
  * API Proxy Route — Routes requests to the correct backend service.
  * Supports JSON and multipart/form-data requests.
  *
- * To add a module-specific backend (e.g. attendance, salary), define a new
- * BASE_URL constant + isXxxPath() matcher and add a branch to the dispatch
- * chain in proxyRequest().
+ * To add a module-specific backend (e.g. attendance, salary), add a key
+ * to `ServiceName`, wire its base URL in `SERVICE_BASE_URL`, and add a
+ * branch in `classifyPath()`.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  API_BASE_URL,
+  AUTH_BASE_URL,
+  UTILITIES_BASE_URL,
+} from '@/config/api';
 
-const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || 'https://aws01.awfatech.com';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://devapi02.awfatech.com';
-const UTILITIES_BASE_URL = process.env.NEXT_PUBLIC_UTILITIES_API_BASE_URL || API_BASE_URL;
+type ServiceName = 'auth' | 'utilities' | 'api';
 
-/** Paths that use the auth domain (aws01): appcode, login, logout, sso */
-function isAuthPath(path: string): boolean {
+const SERVICE_BASE_URL: Record<ServiceName, string> = {
+  auth: AUTH_BASE_URL,
+  utilities: UTILITIES_BASE_URL,
+  api: API_BASE_URL,
+};
+
+/** Classifies a path to the backend service that owns it. */
+function classifyPath(path: string): ServiceName {
   const normalized = path.replace(/^\/+/, '');
-  if (!normalized.startsWith('api/')) return false;
-  const rest = normalized.slice(4);
-  if (!rest.startsWith('v2/auth/')) return false;
-  const afterAuth = rest.slice(8);
-  if (afterAuth === 'appcode') return true;
-  if (afterAuth === 'sso/verify' || afterAuth === 'sso/generate') return true;
-  if (/^[^/]+\/[^/]+\/login$/.test(afterAuth)) return true;
-  if (/^[^/]+\/[^/]+\/logout$/.test(afterAuth)) return true;
-  return false;
-}
+  if (!normalized.startsWith('api/')) return 'api';
+  const rest = normalized.slice(4); // after 'api/'
 
-/** Paths that use the utilities service */
-function isUtilitiesPath(path: string): boolean {
-  const normalized = path.replace(/^\/+/, '');
-  if (!normalized.startsWith('api/')) return false;
-  return normalized.slice(4).startsWith('v2/utilities/');
+  if (rest.startsWith('v2/auth/')) {
+    const afterAuth = rest.slice(8); // after 'v2/auth/'
+    // api/v2/auth/appcode, api/v2/auth/sso/{verify,generate},
+    // api/v2/auth/:app/:user/{login,logout}
+    if (afterAuth === 'appcode') return 'auth';
+    if (afterAuth === 'sso/verify' || afterAuth === 'sso/generate') return 'auth';
+    if (/^[^/]+\/[^/]+\/login$/.test(afterAuth)) return 'auth';
+    if (/^[^/]+\/[^/]+\/logout$/.test(afterAuth)) return 'auth';
+  }
+  if (rest.startsWith('v2/utilities/')) return 'utilities';
+  return 'api';
 }
 
 export async function GET(
@@ -57,6 +64,14 @@ export async function PUT(
   return proxyRequest(request, resolvedParams.path, 'PUT');
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const resolvedParams = await params;
+  return proxyRequest(request, resolvedParams.path, 'PATCH');
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -72,12 +87,9 @@ async function proxyRequest(
 ) {
   try {
     const path = pathSegments.join('/');
-    const baseUrl = isAuthPath(path)
-      ? AUTH_BASE_URL
-      : isUtilitiesPath(path)
-        ? UTILITIES_BASE_URL
-        : API_BASE_URL;
-    const queryString = request.nextUrl.search;
+    const service = classifyPath(path);
+    const baseUrl = SERVICE_BASE_URL[service];
+    const queryString = request.nextUrl.search; // includes leading '?' if present
     const url = `${baseUrl}/${path}${queryString}`;
 
     // Handle body — supports both JSON and multipart/form-data
@@ -116,8 +128,7 @@ async function proxyRequest(
     if (encryptedKey) headers['x-encrypted-key'] = encryptedKey;
     if (encryptedUser) headers['x-encrypted-user'] = encryptedUser;
 
-    const label = baseUrl === AUTH_BASE_URL ? 'auth' : baseUrl === UTILITIES_BASE_URL ? 'utilities' : 'api';
-    console.log(`[Proxy] ${method} ${url} (${label})`);
+    console.log(`[Proxy] ${method} ${url} (${service})`);
 
     const response = await fetch(url, {
       method,

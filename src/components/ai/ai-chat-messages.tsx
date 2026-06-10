@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  Bot, User, Sparkles, Users, BookOpen,
+  Bot, User, Sparkles, Users, BookOpen, Home,
   FileSpreadsheet, Search, Settings, HelpCircle, Zap, ExternalLink,
   Compass, BarChart3,
 } from 'lucide-react';
@@ -28,6 +28,7 @@ const ACTION_ICONS = [Zap] as const;
 const ACTION_KEYS = ['sampleAction'] as const;
 
 const NAV_ITEMS: Array<{ icon: typeof BarChart3; labelKey: string; path: string }> = [
+  { icon: Home, labelKey: 'navOverview', path: '/overview' },
   { icon: BarChart3, labelKey: 'navDashboard', path: '/dashboard' },
   { icon: Users, labelKey: 'navUsers', path: '/users' },
   { icon: BookOpen, labelKey: 'navTutorial', path: '/tutorial' },

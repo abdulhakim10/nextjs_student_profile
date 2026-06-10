@@ -1,28 +1,23 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
-import { authService } from '@/services/auth.service';
-import { API_CONFIG } from '@/config/api';
-import { getLogoutRedirectTarget } from '@/lib/auth';
-import { NAV_ITEMS, type NavItem } from '@/config/navigation';
+import { resolveViewRole, roleHome } from '@/lib/role';
+import { navItemsForRole, type NavItem } from '@/config/navigation';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronsUpDown, LogOut, Sparkles, User } from 'lucide-react';
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import { Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 
@@ -31,49 +26,22 @@ const GROUP_END_HREFS = new Set(['/users']);
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { userData, appcodeData, logout } = useAuthStore();
+  const { userData, appcodeData } = useAuthStore();
   const { t: tNav } = useTranslation('navigation');
   const { t: tSidebar } = useTranslation('sidebar');
-  const { t: tCommon } = useTranslation('common');
 
-  /**
-   * User-initiated logout:
-   *   1. Call backend logout (best-effort, ignore failures)
-   *   2. Clear local auth state via Zustand logout()
-   *   3. Soft redirect to login (preserves appcode, unlike forceLogout)
-   */
-  const handleLogout = async () => {
-    // Resolve redirect target BEFORE clearing session — logout() removes SSO_RETURN_URL.
-    const target = getLogoutRedirectTarget();
-    try {
-      await authService.logout(API_CONFIG.DEFAULT_APP, API_CONFIG.DEFAULT_USER_TYPE);
-    } catch {
-      // Proceed even if backend call fails (e.g. network error, token already expired)
-    } finally {
-      logout();
-      // Hard navigation — target may be cross-origin (main_view login for SSO users)
-      // and even for same-origin paths we want full state teardown post-logout.
-      window.location.href = target;
-    }
-  };
-
-  const userInitials = userData?.user_name
-    ? userData.user_name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : 'U';
+  // Role-split view: admins get the admin tabs (no My Page); employees
+  // get ONLY My Page. See lib/role.ts.
+  const role = resolveViewRole(userData);
+  const navItems = navItemsForRole(role);
 
   return (
-    <Sidebar variant="inset" className="sidebar-premium">
+    <Sidebar variant="inset" collapsible="icon" className="sidebar-premium">
       {/* ── Header — distinct glass card surface ─────────────────── */}
-      <SidebarHeader className="px-2 pt-2 pb-2">
+      <SidebarHeader className="px-2 pt-2 pb-2 group-data-[collapsible=icon]:px-1">
         <Link
-          href="/dashboard"
-          className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/40 bg-white/60 px-2.5 py-2 shadow-sm shadow-black/[0.04] backdrop-blur-md transition-all duration-300 hover:border-primary/20 hover:shadow-md hover:shadow-primary/10 dark:border-white/10 dark:bg-white/5 dark:hover:border-primary/30"
+          href={roleHome(role)}
+          className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-white/40 bg-white/60 px-2.5 py-2 shadow-sm shadow-black/[0.04] backdrop-blur-md transition-all duration-300 hover:border-primary/20 hover:shadow-md hover:shadow-primary/10 dark:border-white/10 dark:bg-white/5 dark:hover:border-primary/30 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
         >
           {/* Animated brand glow */}
           <span className="pointer-events-none absolute -inset-px -z-0 bg-gradient-to-r from-primary/0 via-primary/8 to-primary/0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
@@ -93,7 +61,7 @@ export function AppSidebar() {
             )}
             <span className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-white/25 via-white/0 to-white/0" />
           </div>
-          <div className="relative grid flex-1 text-left leading-tight min-w-0">
+          <div className="relative grid flex-1 text-left leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="truncate text-[13.5px] font-semibold tracking-tight">
               {appcodeData?.customer || tSidebar('appName')}
             </span>
@@ -101,21 +69,21 @@ export function AppSidebar() {
               {appcodeData?.client_appname || tSidebar('dashboard')}
             </span>
           </div>
-          <Sparkles className="relative size-3.5 shrink-0 text-primary/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Sparkles className="relative size-3.5 shrink-0 text-primary/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-data-[collapsible=icon]:hidden" />
         </Link>
       </SidebarHeader>
 
       {/* ── Nav — floating pill items on a tinted canvas ────────── */}
       <SidebarContent className="px-1.5 py-2">
         <nav className="flex flex-col gap-0.5">
-          {NAV_ITEMS.map((item, idx) => {
+          {navItems.map((item, idx) => {
             const isExactActive = pathname === item.href;
             const isChildActive = item.children?.some(
               (child) => pathname === child.href
             );
             const isActive = isExactActive || Boolean(isChildActive);
             const isGroupEnd = GROUP_END_HREFS.has(item.href);
-            const isLast = idx === NAV_ITEMS.length - 1;
+            const isLast = idx === navItems.length - 1;
 
             return (
               <div key={item.href}>
@@ -123,9 +91,16 @@ export function AppSidebar() {
                   item={item}
                   label={tNav(item.titleKey)}
                   isActive={isActive}
+                  subItems={item.children?.map((child) => ({
+                    href: child.href,
+                    label: tNav(child.titleKey),
+                    isActive: pathname === child.href,
+                  }))}
                 />
                 {item.children && (
-                  <div className="mt-1 flex flex-col gap-px">
+                  /* Sub-lists have no icon to collapse down to — hide the
+                     whole block on the icon rail (same as claim). */
+                  <div className="mt-1 flex flex-col gap-px group-data-[collapsible=icon]:hidden">
                     {item.children.map((child) => (
                       <SubRow
                         key={child.href}
@@ -142,63 +117,6 @@ export function AppSidebar() {
           })}
         </nav>
       </SidebarContent>
-
-      {/* ── Footer — distinct glass card ─────────────────────────── */}
-      <SidebarFooter className="p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="group relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl border border-white/40 bg-white/60 px-2 py-1.5 text-left shadow-sm shadow-black/[0.04] backdrop-blur-md transition-all duration-300 hover:border-primary/20 hover:shadow-md hover:shadow-primary/10 data-[state=open]:border-primary/30 data-[state=open]:shadow-md data-[state=open]:shadow-primary/15 dark:border-white/10 dark:bg-white/5 dark:hover:border-primary/30"
-            >
-              <span className="pointer-events-none absolute -inset-px -z-0 bg-gradient-to-r from-primary/0 via-primary/8 to-primary/0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 group-data-[state=open]:opacity-100" />
-              <div className="relative shrink-0">
-                <Avatar className="h-8 w-8 rounded-lg shadow-sm ring-1 ring-black/5 dark:ring-white/15">
-                  <AvatarImage
-                    src={userData?.user_image}
-                    alt={userData?.user_name}
-                  />
-                  <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary via-primary to-primary/75 text-[11px] font-semibold text-primary-foreground">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-sidebar" />
-              </div>
-              <div className="relative grid flex-1 text-left leading-tight min-w-0">
-                <span className="truncate text-[13px] font-semibold tracking-tight">
-                  {userData?.user_name || tCommon('user')}
-                </span>
-                <span className="truncate text-[11px] text-muted-foreground">
-                  {userData?.user_email || ''}
-                </span>
-              </div>
-              <ChevronsUpDown className="relative ml-auto size-3.5 shrink-0 text-muted-foreground/60 transition-all duration-300 group-hover:text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl"
-            side="top"
-            align="start"
-            sideOffset={8}
-          >
-            <DropdownMenuItem
-              onClick={() => router.push('/settings')}
-              className="rounded-lg"
-            >
-              <User className="mr-2 h-4 w-4" />
-              {tCommon('settings')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="rounded-lg text-destructive focus:text-destructive"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              {tCommon('logout')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }
@@ -207,23 +125,32 @@ export function AppSidebar() {
  * Top-level nav row — floating pill on the sidebar canvas.
  * Active state BLOOMS: glass card surface + primary glow underneath + saturated icon.
  * Inactive: soft hover lift, icon picks up a hint of primary on hover.
+ *
+ * On the collapsed icon rail the row gains a glass FLYOUT (HoverCard, right
+ * side): the item name as a clickable header plus, for group items, its
+ * children as clickable rows with the active one highlighted — never the
+ * browser's native title tooltip.
  */
 function NavRow({
   item,
   label,
   isActive,
+  subItems,
 }: {
   item: NavItem;
   label: string;
   isActive: boolean;
+  subItems?: { href: string; label: string; isActive: boolean }[];
 }) {
+  const { state } = useSidebar();
   const Icon = item.icon;
-  return (
+  const row = (
     <Link
       href={item.href}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'group/nav relative flex h-10 items-center gap-3 overflow-hidden rounded-xl px-2.5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0',
         isActive
           ? 'border border-white/50 bg-white/70 shadow-md shadow-primary/15 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.07]'
           : 'border border-transparent text-sidebar-foreground/75 hover:border-white/30 hover:bg-white/35 hover:shadow-sm hover:shadow-black/[0.03] hover:backdrop-blur-sm hover:translate-x-px dark:hover:border-white/[0.06] dark:hover:bg-white/[0.03]'
@@ -256,7 +183,7 @@ function NavRow({
       </span>
       <span
         className={cn(
-          'relative truncate text-[13px] tracking-tight transition-all duration-300',
+          'relative truncate text-[13px] tracking-tight transition-all duration-300 group-data-[collapsible=icon]:hidden',
           isActive ? 'font-semibold text-foreground' : 'font-medium'
         )}
       >
@@ -264,9 +191,63 @@ function NavRow({
       </span>
       {/* Active dot — far right, signals "this is the page" */}
       {isActive && (
-        <span className="relative ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_oklch(var(--primary)/60%)]" />
+        <span className="relative ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_oklch(var(--primary)/60%)] group-data-[collapsible=icon]:hidden" />
       )}
     </Link>
+  );
+
+  // Expanded sidebar — labels are visible, no flyout needed.
+  if (state !== 'collapsed') return row;
+
+  return (
+    <HoverCard openDelay={80} closeDelay={150}>
+      <HoverCardTrigger asChild>{row}</HoverCardTrigger>
+      <HoverCardContent
+        side="right"
+        align="start"
+        sideOffset={12}
+        className="w-auto min-w-44 max-w-64 rounded-2xl border-border/40 p-1.5 shadow-xl shadow-black/5"
+      >
+        {/* Header — the item itself, clickable like the rail icon */}
+        <Link
+          href={item.href}
+          className={cn(
+            'flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-colors',
+            isActive
+              ? 'bg-primary/8 text-primary'
+              : 'hover:bg-accent hover:text-foreground',
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+          <span className="truncate text-sm font-semibold tracking-tight">{label}</span>
+        </Link>
+        {/* Children — the group fans out right here, active one lit */}
+        {subItems && subItems.length > 0 && (
+          <div className="mt-1 flex flex-col gap-px border-t border-border/40 pt-1">
+            {subItems.map((sub) => (
+              <Link
+                key={sub.href}
+                href={sub.href}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12.5px] tracking-tight transition-colors',
+                  sub.isActive
+                    ? 'bg-primary/8 font-semibold text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                )}
+              >
+                <span
+                  className={cn(
+                    'h-1 w-1 shrink-0 rounded-full',
+                    sub.isActive ? 'bg-primary' : 'bg-muted-foreground/40',
+                  )}
+                />
+                <span className="truncate">{sub.label}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 

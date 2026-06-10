@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * App Launcher (receiver side) — popover that lets a SSO'd user jump
- * back to the main dashboard or switch to another module.
+ * App Launcher (receiver side) — popover that lets a SSO'd ADMIN jump back
+ * to the main dashboard or switch to another module. For REAL employees
+ * (deriveRole — the employee VIEW override does not hide it) it collapses
+ * to a back-to-dashboard button — module switching is the admin surface.
  *
  * Visibility: only rendered when SSO_RETURN_URL is present in localStorage
  * (= user entered via SSO from main_view). Users who logged in directly to
@@ -22,8 +24,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { STORAGE_KEYS } from '@/config/constants';
-import { CURRENT_MODULE, type ModuleKey } from '@/config/modules';
+import { CURRENT_MODULE, canAccessModule, type ModuleKey } from '@/config/modules';
+import { useAuthStore } from '@/stores/auth.store';
 import { useLanguageStore } from '@/stores/language.store';
+import { deriveRole } from '@/lib/role';
 import { useTranslation } from '@/i18n';
 import type { Translations } from '@/i18n';
 import { isTheme } from '@/lib/theme';
@@ -103,10 +107,11 @@ type Tile =
   | (TileBase & { kind: 'home' })
   | (TileBase & { kind: 'module'; moduleKey: ModuleKey; accent: Accent });
 
-// Mirrors main_view's App Launcher subscribed list. Adding a module here is
-// enough — main_view handles the SSO redirect destination via its own
-// MODULE_URLS registry. `labelKey` points into the `appLauncher` i18n
-// namespace; add the matching string in en.json + ms.json when adding a tile.
+// Mirrors main_view's App Launcher tile list. When adding a module: add the
+// tile here, its `system_access` entry in config/modules.ts
+// MODULE_ACCESS_KEYS (and main_view's copy), and the `labelKey` string in
+// en.json + ms.json (`appLauncher` namespace). main_view handles the SSO
+// redirect destination via its own MODULE_URLS registry.
 // `accent` matches the gradient's dominant color so the active highlight
 // reads coherently with the tile's identity.
 const TILES: Tile[] = [
@@ -178,7 +183,8 @@ export function AppLauncher() {
   const [open, setOpen] = useState(false);
   const [mainOrigin, setMainOrigin] = useState<string | null>(null);
   const { theme } = useTheme();
-  const { t } = useTranslation('appLauncher');
+const { t } = useTranslation('appLauncher');
+  const userData = useAuthStore((s) => s.userData);
 
   // Read from localStorage on mount. Done in effect to keep SSR-safe and to
   // re-read after hydration (Zustand persist doesn't cover SSO_RETURN_URL).
@@ -191,7 +197,7 @@ export function AppLauncher() {
 
   // No self-filter — a click on the current module's tile just does a fresh
   // SSO roundtrip via main, which is harmless. Keeps the launcher byte-
-  // identical across all receivers (base/attendance/salary).
+  // identical across all five receivers.
   const handleSelect = (tile: Tile) => {
     setOpen(false);
     // Snapshot locale + theme at click time — passed in URL so main's dashboard
@@ -203,13 +209,43 @@ export function AppLauncher() {
     window.location.href = buildTargetUrl(mainOrigin, tile, locale, themePref);
   };
 
+  // Whole-module switching is keyed to the REAL role (deriveRole): an admin
+  // browsing the employee view keeps the grid (so he can relaunch a module
+  // as admin); real employees get a single back-to-dashboard button.
+  if (deriveRole(userData) !== 'admin') {
+    const homeTile = TILES.find((tile) => tile.kind === 'home');
+    if (!homeTile) return null;
+    const HomeIcon = homeTile.icon;
+    return (
+      <button
+        type="button"
+        aria-label={t('home')}
+        title={t('home')}
+        onClick={() => handleSelect(homeTile)}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground"
+      >
+        <HomeIcon className="h-4 w-4" />
+      </button>
+    );
+  }
+
+  // Same `system_access` filter main's launcher applies — a module the
+  // user's plan doesn't include shows no tile here either (main's `?launch=`
+  // guard would bounce the click anyway; hiding it keeps both launchers
+  // consistent). The 'home' tile always shows.
+  const visibleTiles = TILES.filter(
+    (tile) =>
+      tile.kind === 'home' ||
+      canAccessModule(userData?.system_access, tile.moduleKey),
+  );
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
           aria-label={t('ariaLabel')}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
         >
           <span className="grid grid-cols-3 gap-[2px]">
             {Array.from({ length: 9 }).map((_, i) => (
@@ -227,7 +263,7 @@ export function AppLauncher() {
           {t('switchTo')}
         </p>
         <div className="mt-1 grid grid-cols-3 gap-1">
-          {TILES.map((tile) => {
+          {visibleTiles.map((tile) => {
             const Icon = tile.icon;
             // "You are here" — only module tiles can match the build's
             // CURRENT_MODULE; the 'home' tile never highlights. When current,

@@ -4,13 +4,11 @@
  */
 
 // ---------------------------------------------------------------------------
-// Backend URLs
+// Backend URLs — re-exported from the central cascade in `@/config/api`.
 // ---------------------------------------------------------------------------
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://devapi02.awfatech.com';
-export const UTILITIES_BASE_URL =
-  process.env.NEXT_PUBLIC_UTILITIES_API_BASE_URL || API_BASE_URL;
+export { API_BASE_URL, UTILITIES_BASE_URL } from '@/config/api';
+
 export const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v2';
 export const DEFAULT_APP = process.env.NEXT_PUBLIC_DEFAULT_APP || 'eboss';
 export const DEFAULT_USER = process.env.NEXT_PUBLIC_DEFAULT_USER_TYPE || 'staff';

@@ -94,8 +94,10 @@ export const useAuthStore = create<AuthState>()(
           // timestamp from a prior session in this module (e.g. after SSO entry).
           localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY, String(Date.now()));
         }
+        // sid is string everywhere internally — coerce in case API returns number
+        const normalized: UserData = { ...data, user_sid: String(data.user_sid ?? '') };
         set({
-          userData: data,
+          userData: normalized,
           isAuthenticated: true,
           error: null,
         });

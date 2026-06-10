@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/auth.service';
 import { APP_VERSION, STORAGE_KEYS } from '@/config/constants';
+import { deriveRole, roleHome } from '@/lib/role';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,7 +62,11 @@ export default function LoginPage() {
         // Direct login = user is now using this module standalone, not via SSO.
         // Sever the SSO origin so future idle/logout goes to module's own login.
         localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
-        router.push('/dashboard');
+        // ...and the per-tab role override so a previous SSO session in
+        // this tab doesn't leak into this standalone session.
+        sessionStorage.removeItem(STORAGE_KEYS.ROLE_OVERRIDE);
+        // Admin → /overview; employee → /my-page (see lib/role.ts).
+        router.push(roleHome(deriveRole(response.data)));
       } else {
         setError(response.message || t('loginFailed'));
       }

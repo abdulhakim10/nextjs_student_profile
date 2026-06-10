@@ -51,7 +51,7 @@ const SECTIONS: Section[] = [
     iconColor: 'text-blue-600 dark:text-blue-400',
     steps: [
       { titleKey: 'gs1Title', descKey: 'gs1Desc' },
-      { titleKey: 'gs2Title', descKey: 'gs2Desc', link: '/dashboard' },
+      { titleKey: 'gs2Title', descKey: 'gs2Desc', link: '/overview' },
       { titleKey: 'gs3Title', descKey: 'gs3Desc', link: '/settings' },
     ],
   },

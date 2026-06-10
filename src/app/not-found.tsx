@@ -18,9 +18,9 @@ export default function NotFound() {
         </p>
       </div>
       <Button asChild className="rounded-xl gap-2">
-        <Link href="/dashboard">
+        <Link href="/overview">
           <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
+          Back to Overview
         </Link>
       </Button>
     </div>
