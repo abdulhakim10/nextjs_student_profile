@@ -36,7 +36,7 @@ type LauncherKey = keyof Translations['appLauncher'];
 
 /** Accent palette for the "you are here" highlight — keyed names so the
  *  Tailwind JIT can see the literal class strings below and emit the CSS. */
-type Accent = 'violet' | 'amber' | 'rose' | 'sky' | 'emerald' | 'teal';
+type Accent = 'violet' | 'amber' | 'rose' | 'sky' | 'emerald' | 'teal' | 'blue';
 
 /** Per-accent class bundle. Each module tile picks one matching its gradient
  *  so the active highlight reads as "this tile's color got brighter", not as
@@ -59,6 +59,13 @@ const ACCENT: Record<
     bg: 'bg-amber-500/10',
     dot: 'bg-amber-500',
     glow: 'shadow-amber-500/50',
+  },
+  blue: {
+    ring: 'ring-blue-500',
+    text: 'text-blue-600 dark:text-blue-400',
+    bg: 'bg-blue-500/10',
+    dot: 'bg-blue-500',
+    glow: 'shadow-blue-500/50',
   },
   rose: {
     ring: 'ring-rose-500',
@@ -117,7 +124,7 @@ type Tile =
 const TILES: Tile[] = [
   { kind: 'home',                              labelKey: 'home',        icon: Home,      gradient: 'from-slate-500 to-slate-600' },
   { kind: 'module', moduleKey: 'attendance',   labelKey: 'attendance',  icon: Clock,     gradient: 'from-violet-500 to-indigo-500',   accent: 'violet' },
-  { kind: 'module', moduleKey: 'salary',       labelKey: 'payroll',     icon: Wallet,    gradient: 'from-amber-500 to-orange-500',    accent: 'amber' },
+  { kind: 'module', moduleKey: 'salary',       labelKey: 'payroll',     icon: Wallet,    gradient: 'from-blue-500 to-indigo-500',     accent: 'blue' },
   { kind: 'module', moduleKey: 'claim',        labelKey: 'claims',      icon: Receipt,   gradient: 'from-rose-500 to-pink-500',       accent: 'rose' },
   { kind: 'module', moduleKey: 'recruitment',  labelKey: 'recruitment', icon: Briefcase, gradient: 'from-sky-500 to-cyan-500',         accent: 'sky' },
   { kind: 'module', moduleKey: 'leave',        labelKey: 'leave',       icon: Plane,     gradient: 'from-emerald-500 to-teal-500',     accent: 'emerald' },
