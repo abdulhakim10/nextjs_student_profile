@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Settings as SettingsIcon, Sun, Moon, Monitor, Info, CalendarClock } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { MotionStagger, MotionCard } from '@/components/dashboard/motion-wrapper';
 import { useLanguageStore } from '@/stores/language.store';
 import { useTranslation } from '@/i18n';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { SUPPORTED_LOCALES } from '@/i18n/types';
 import { APP_VERSION, APP_VERSION_DATE } from '@/lib/version';
 import { formatDate } from '@/lib/date-utils';
@@ -27,9 +27,9 @@ export default function SettingsPage() {
   const locale = useLanguageStore((s) => s.locale);
   const setLocale = useLanguageStore((s) => s.setLocale);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const activeTheme = mounted ? theme : undefined;
+  // Gate the theme read until hydrated so the active button doesn't flash the
+  // wrong state before hydration.
+  const activeTheme = useHydrated() ? theme : undefined;
 
   return (
     <MotionStagger className="space-y-6">
