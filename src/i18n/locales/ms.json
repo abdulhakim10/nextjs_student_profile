@@ -38,7 +38,11 @@
     "claims": "Tuntutan",
     "recruitment": "Pengambilan",
     "leave": "Cuti",
-    "cms": "CMS"
+    "cms": "CMS",
+    "user": "Pengguna",
+    "staff": "Kakitangan",
+    "client": "Pelanggan",
+    "supplier": "Pembekal"
   },
   "sidebar": {
     "appName": "Papan Pemuka Admin",

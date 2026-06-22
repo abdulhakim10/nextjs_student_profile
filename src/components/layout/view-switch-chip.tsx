@@ -33,7 +33,7 @@ export function ViewSwitchChip() {
     <button
       type="button"
       onClick={handleSwitch}
-      className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/50 hover:text-primary sm:flex"
+      className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-border/70 bg-background/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/50 hover:text-primary lg:flex"
     >
       <ArrowLeftRight className="h-3 w-3" />
       {otherView === 'admin' ? t('viewAdmin') : t('viewEmployee')}

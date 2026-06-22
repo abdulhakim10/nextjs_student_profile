@@ -38,7 +38,11 @@
     "claims": "Claims",
     "recruitment": "Recruitment",
     "leave": "Leave",
-    "cms": "CMS"
+    "cms": "CMS",
+    "user": "Users",
+    "staff": "Staff",
+    "client": "Clients",
+    "supplier": "Suppliers"
   },
   "sidebar": {
     "appName": "Admin Dashboard",
