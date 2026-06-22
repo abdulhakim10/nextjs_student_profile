@@ -17,14 +17,14 @@
  */
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { Home, Clock, Wallet, Receipt, Briefcase, Plane, FileText, type LucideIcon } from 'lucide-react';
+import { Home, Clock, Wallet, Receipt, Briefcase, Plane, FileText, Users, UserCog, Handshake, Truck, type LucideIcon } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { STORAGE_KEYS } from '@/config/constants';
-import { CURRENT_MODULE, canAccessModule, type ModuleKey } from '@/config/modules';
+import { CURRENT_MODULE, canAccessModule, isUngatedModule, type ModuleKey } from '@/config/modules';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLanguageStore } from '@/stores/language.store';
 import { deriveRole } from '@/lib/role';
@@ -129,6 +129,10 @@ const TILES: Tile[] = [
   { kind: 'module', moduleKey: 'recruitment',  labelKey: 'recruitment', icon: Briefcase, gradient: 'from-sky-500 to-cyan-500',         accent: 'sky' },
   { kind: 'module', moduleKey: 'leave',        labelKey: 'leave',       icon: Plane,     gradient: 'from-emerald-500 to-teal-500',     accent: 'emerald' },
   { kind: 'module', moduleKey: 'cms',          labelKey: 'cms',         icon: FileText,  gradient: 'from-teal-500 to-cyan-500',         accent: 'teal' },
+  { kind: 'module', moduleKey: 'user',         labelKey: 'user',        icon: Users,     gradient: 'from-amber-500 to-orange-500',     accent: 'amber' },
+  { kind: 'module', moduleKey: 'staff',        labelKey: 'staff',       icon: UserCog,   gradient: 'from-blue-500 to-indigo-500',      accent: 'blue' },
+  { kind: 'module', moduleKey: 'client',       labelKey: 'client',      icon: Handshake, gradient: 'from-sky-500 to-cyan-500',          accent: 'sky' },
+  { kind: 'module', moduleKey: 'supplier',     labelKey: 'supplier',    icon: Truck,     gradient: 'from-emerald-500 to-teal-500',     accent: 'emerald' },
 ];
 
 /**
@@ -243,6 +247,7 @@ const { t } = useTranslation('appLauncher');
   const visibleTiles = TILES.filter(
     (tile) =>
       tile.kind === 'home' ||
+      isUngatedModule(tile.moduleKey) ||
       canAccessModule(userData?.system_access, tile.moduleKey),
   );
 

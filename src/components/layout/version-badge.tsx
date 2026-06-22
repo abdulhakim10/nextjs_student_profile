@@ -17,7 +17,7 @@ export function VersionBadge() {
       <HoverCardPrimitive.Trigger asChild>
         <Link
           href="/settings"
-          className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 backdrop-blur px-2.5 py-1 text-[10px] font-mono font-medium text-muted-foreground shadow-sm transition-colors hover:border-border hover:text-foreground"
+          className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 backdrop-blur px-2.5 py-1 text-[10px] font-mono font-medium text-muted-foreground shadow-sm transition-colors hover:border-border hover:text-foreground"
         >
           v{APP_VERSION}
         </Link>

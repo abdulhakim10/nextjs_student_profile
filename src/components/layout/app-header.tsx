@@ -1,18 +1,8 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import React from 'react';
-import { Search, Sun, Moon, Sparkles } from 'lucide-react';
+import { Building2, Search, Sun, Moon, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { UserMenu } from '@/components/layout/user-menu';
@@ -24,26 +14,12 @@ import { useAIChatStore } from '@/stores/ai-chat.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { deriveRole } from '@/lib/role';
 
-function generateBreadcrumbs(pathname: string) {
-  const segments = pathname.split('/').filter(Boolean);
-  return segments.map((segment, index) => {
-    const href = '/' + segments.slice(0, index + 1).join('/');
-    const label = segment
-      .replace(/-/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-    const isLast = index === segments.length - 1;
-    return { href, label, isLast };
-  });
-}
-
 export function AppHeader() {
-  const pathname = usePathname();
-  const breadcrumbs = generateBreadcrumbs(pathname);
   const { t } = useTranslation('common');
   const { t: tDash } = useTranslation('dashboard');
   const { setTheme, theme } = useTheme();
   const toggleAI = useAIChatStore((s) => s.togglePanel);
-  const { userData } = useAuthStore();
+  const { appcodeData, userData } = useAuthStore();
   // AI assistant + ⌘K search follow the REAL role (deriveRole) — an admin
   // browsing the employee view keeps his tools; real employees never see
   // them (their panels are not even mounted, see app-shell.tsx).
@@ -59,24 +35,14 @@ export function AppHeader() {
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 px-4 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
       <SidebarTrigger className="-ml-1 hover:bg-primary/5 hover:text-primary transition-colors rounded-lg" />
       <Separator orientation="vertical" className="mr-2 h-4 bg-border/60" />
-      <Breadcrumb>
-        <BreadcrumbList>
-          {breadcrumbs.map((crumb, index) => (
-            <React.Fragment key={crumb.href}>
-              {index > 0 && <BreadcrumbSeparator />}
-              <BreadcrumbItem>
-                {crumb.isLast ? (
-                  <BreadcrumbPage className="font-medium truncate max-w-[120px] sm:max-w-none">{crumb.label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink href={crumb.href} className="hover:text-primary transition-colors truncate max-w-[120px] sm:max-w-none">
-                    {crumb.label}
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </React.Fragment>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+      {/* Organization identity — matches every other module's top bar
+          (the sidebar brand block names the module). */}
+      <div className="flex min-w-0 items-center gap-2">
+        <Building2 className="h-4 w-4 shrink-0 text-primary" />
+        <span className="truncate text-sm font-bold uppercase tracking-wide">
+          {appcodeData?.customer || appcodeData?.client_appname || ''}
+        </span>
+      </div>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         <ViewSwitchChip />
@@ -90,7 +56,7 @@ export function AppHeader() {
             >
               <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-purple-500 to-primary opacity-0 blur-sm group-hover:opacity-40 transition-opacity" />
               <Sparkles className="h-3.5 w-3.5 relative" />
-              <span className="relative hidden sm:inline">{tDash('aiAssistant')}</span>
+              <span className="relative hidden lg:inline">{tDash('aiAssistant')}</span>
               {/* Online pulse */}
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
