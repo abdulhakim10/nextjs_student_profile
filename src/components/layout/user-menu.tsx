@@ -8,7 +8,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, LifeBuoy } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,12 +22,14 @@ import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/auth.service';
 import { API_CONFIG } from '@/config/api';
 import { getLogoutRedirectTarget } from '@/lib/auth';
+import { openSupportPortal } from '@/lib/support-portal';
 import { useTranslation } from '@/i18n';
 
 export function UserMenu() {
   const router = useRouter();
   const { userData, logout } = useAuthStore();
   const { t: tCommon } = useTranslation('common');
+  const { t: tSupport } = useTranslation('support');
 
   const userInitials = userData?.user_name
     ? userData.user_name
@@ -93,6 +95,13 @@ export function UserMenu() {
         >
           <User className="mr-2 h-4 w-4" />
           {tCommon('settings')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => openSupportPortal(userData)}
+          className="rounded-md"
+        >
+          <LifeBuoy className="mr-2 h-4 w-4" />
+          {tSupport('needSupport')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

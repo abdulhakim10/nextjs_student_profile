@@ -29,6 +29,11 @@
     "settings": "Settings",
     "tutorial": "Tutorial"
   },
+  "support": {
+    "account": "Account",
+    "accountSubtitle": "Your profile and support.",
+    "needSupport": "Need support"
+  },
   "appLauncher": {
     "ariaLabel": "Switch module",
     "switchTo": "Switch to",

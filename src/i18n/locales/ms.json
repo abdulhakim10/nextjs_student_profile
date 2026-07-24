@@ -29,6 +29,11 @@
     "settings": "Tetapan",
     "tutorial": "Tutorial"
   },
+  "support": {
+    "account": "Akaun",
+    "accountSubtitle": "Profil dan sokongan anda.",
+    "needSupport": "Perlukan sokongan"
+  },
   "appLauncher": {
     "ariaLabel": "Tukar modul",
     "switchTo": "Tukar ke",
