@@ -1,11 +1,14 @@
 'use client';
 
-import { Settings as SettingsIcon, Sun, Moon, Monitor, Info, CalendarClock } from 'lucide-react';
+import { Settings as SettingsIcon, Sun, Moon, Monitor, Info, CalendarClock, LifeBuoy, User, Mail, Phone } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { MotionStagger, MotionCard } from '@/components/dashboard/motion-wrapper';
 import { useLanguageStore } from '@/stores/language.store';
+import { useAuthStore } from '@/stores/auth.store';
+import { openSupportPortal } from '@/lib/support-portal';
 import { useTranslation } from '@/i18n';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { SUPPORTED_LOCALES } from '@/i18n/types';
@@ -23,9 +26,15 @@ const THEME_OPTIONS = [
 
 export default function SettingsPage() {
   const { t } = useTranslation('common');
+  const { t: tSupport } = useTranslation('support');
   const { theme, setTheme } = useTheme();
   const locale = useLanguageStore((s) => s.locale);
   const setLocale = useLanguageStore((s) => s.setLocale);
+  const userData = useAuthStore((s) => s.userData);
+
+  const accountName = userData?.user_name?.trim() || '';
+  const accountEmail = userData?.user_email?.trim() || '';
+  const accountPhone = userData?.user_phone_num?.trim() || '';
 
   // Gate the theme read until hydrated so the active button doesn't flash the
   // wrong state before hydration.
@@ -63,6 +72,40 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </MotionCard>
+
+      <MotionCard>
+        <Card>
+          <CardContent className="space-y-4 p-6">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold tracking-tight">{tSupport('account')}</h2>
+                <p className="text-xs text-muted-foreground">{tSupport('accountSubtitle')}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm">
+              <span className="inline-flex items-center gap-2">
+                <User className="h-3.5 w-3.5 text-muted-foreground" />
+                {accountName || <span className="text-muted-foreground">—</span>}
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                {accountEmail || <span className="text-muted-foreground">—</span>}
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                {accountPhone || <span className="text-muted-foreground">—</span>}
+              </span>
+            </div>
+            <Button variant="outline" onClick={() => openSupportPortal(userData)}>
+              <LifeBuoy className="h-4 w-4" />
+              {tSupport('needSupport')}
+            </Button>
           </CardContent>
         </Card>
       </MotionCard>

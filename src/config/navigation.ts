@@ -55,6 +55,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon: UserCircle,
     roles: ['employee'],
   },
+  // Support isn't a sidebar tab — "Need support" lives in the avatar menu
+  // and the Settings account card, linking out to the help-desk portal.
   // Tutorial + Settings are admin tabs — the employee view shows ONLY
   // My Page (Settings stays reachable via the avatar dropdown).
   {
