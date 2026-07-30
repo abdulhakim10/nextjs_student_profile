@@ -1,6 +1,6 @@
 'use client';
 
-import { Settings as SettingsIcon, Sun, Moon, Monitor, Info, CalendarClock, LifeBuoy, User, Mail, Phone } from 'lucide-react';
+import { Settings as SettingsIcon, Sun, Moon, Monitor, Info, CalendarClock, LifeBuoy, User, Mail, Phone, Ticket } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { MotionStagger, MotionCard } from '@/components/dashboard/motion-wrapper';
 import { useLanguageStore } from '@/stores/language.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { openSupportPortal } from '@/lib/support-portal';
+import { openSupportPortal, openMyTickets } from '@/lib/support-portal';
 import { useTranslation } from '@/i18n';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { SUPPORTED_LOCALES } from '@/i18n/types';
@@ -102,10 +102,16 @@ export default function SettingsPage() {
                 {accountPhone || <span className="text-muted-foreground">—</span>}
               </span>
             </div>
-            <Button variant="outline" onClick={() => openSupportPortal(userData)}>
-              <LifeBuoy className="h-4 w-4" />
-              {tSupport('needSupport')}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => openSupportPortal(userData)}>
+                <LifeBuoy className="h-4 w-4" />
+                {tSupport('contactSupport')}
+              </Button>
+              <Button variant="outline" onClick={() => openMyTickets(userData)}>
+                <Ticket className="h-4 w-4" />
+                {tSupport('myTickets')}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </MotionCard>

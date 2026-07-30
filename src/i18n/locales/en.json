@@ -32,7 +32,8 @@
   "support": {
     "account": "Account",
     "accountSubtitle": "Your profile and support.",
-    "needSupport": "Need support"
+    "contactSupport": "Contact support",
+    "myTickets": "My tickets"
   },
   "appLauncher": {
     "ariaLabel": "Switch module",

@@ -32,7 +32,8 @@
   "support": {
     "account": "Akaun",
     "accountSubtitle": "Profil dan sokongan anda.",
-    "needSupport": "Perlukan sokongan"
+    "contactSupport": "Hubungi sokongan",
+    "myTickets": "Tiket saya"
   },
   "appLauncher": {
     "ariaLabel": "Tukar modul",
