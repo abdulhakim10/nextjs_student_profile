@@ -8,7 +8,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { LogOut, User, LifeBuoy } from 'lucide-react';
+import { LogOut, User, LifeBuoy, Ticket } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/auth.service';
 import { API_CONFIG } from '@/config/api';
 import { getLogoutRedirectTarget } from '@/lib/auth';
-import { openSupportPortal } from '@/lib/support-portal';
+import { openSupportPortal, openMyTickets } from '@/lib/support-portal';
 import { useTranslation } from '@/i18n';
 
 export function UserMenu() {
@@ -101,7 +101,14 @@ export function UserMenu() {
           className="rounded-md"
         >
           <LifeBuoy className="mr-2 h-4 w-4" />
-          {tSupport('needSupport')}
+          {tSupport('contactSupport')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => openMyTickets(userData)}
+          className="rounded-md"
+        >
+          <Ticket className="mr-2 h-4 w-4" />
+          {tSupport('myTickets')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
