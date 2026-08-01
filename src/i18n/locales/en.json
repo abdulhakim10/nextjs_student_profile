@@ -32,7 +32,7 @@
   "support": {
     "account": "Account",
     "accountSubtitle": "Your profile and support.",
-    "contactSupport": "Contact support",
+    "contactSupport": "Submit ticket",
     "myTickets": "My tickets"
   },
   "appLauncher": {
