@@ -2,7 +2,7 @@
  * Support deep links into the help-desk.
  *
  *   • Contact support → the guest create page, pre-filled with the user's info:
- *       {HELPDESK_URL}?name=…&email=…&phone=…&uid=…&appcode=…
+ *       {HELPDESK_URL}?name=…&email=…&phone=…&uid=…&appcode=…&module=…
  *   • My tickets      → the public, email-filtered ticket list:
  *       {TICKETS_URL}?public=1&email=…
  *
@@ -17,6 +17,10 @@ import { API_CONFIG } from '@/config/api';
 
 const HELPDESK_URL = process.env.NEXT_PUBLIC_SUPPORT_HELPDESK_URL;
 const TICKETS_URL = process.env.NEXT_PUBLIC_SUPPORT_TICKETS_URL;
+// This app's module tag — travels in the create deep link so the guest
+// ticket is filed under the originating app's module (rather than the
+// support system's own default).
+const MODULE_NAME = process.env.NEXT_PUBLIC_MODULE_NAME;
 
 /**
  * Decode the `app_code` claim from the encrypted-key JWT in localStorage. The
@@ -53,12 +57,14 @@ export function buildSupportPortalUrl(userData: UserData | null): string | null 
   const phone = userData?.user_phone_num?.trim();
   const uid = userData?.user_id?.trim();
   const appcode = decodeAppCode() ?? API_CONFIG.DEFAULT_APP;
+  const moduleName = MODULE_NAME?.trim();
 
   if (name) params.set('name', name);
   if (email) params.set('email', email);
   if (phone) params.set('phone', phone);
   if (uid) params.set('uid', uid);
   if (appcode) params.set('appcode', appcode);
+  if (moduleName) params.set('module', moduleName);
 
   return `${HELPDESK_URL}?${params.toString()}`;
 }
