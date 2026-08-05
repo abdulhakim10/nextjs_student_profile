@@ -19,8 +19,11 @@ const HELPDESK_URL = process.env.NEXT_PUBLIC_SUPPORT_HELPDESK_URL;
 const TICKETS_URL = process.env.NEXT_PUBLIC_SUPPORT_TICKETS_URL;
 // This app's module tag — travels in the create deep link so the guest
 // ticket is filed under the originating app's module (rather than the
-// support system's own default).
+// support system's own default). The id is the canonical link the support
+// form uses to preselect the module (and scope its issue types); the name
+// rides along as a human-readable fallback.
 const MODULE_NAME = process.env.NEXT_PUBLIC_MODULE_NAME;
+const MODULE_ID = process.env.NEXT_PUBLIC_MODULE_ID;
 
 /**
  * Decode the `app_code` claim from the encrypted-key JWT in localStorage. The
@@ -58,6 +61,7 @@ export function buildSupportPortalUrl(userData: UserData | null): string | null 
   const uid = userData?.user_id?.trim();
   const appcode = decodeAppCode() ?? API_CONFIG.DEFAULT_APP;
   const moduleName = MODULE_NAME?.trim();
+  const moduleId = MODULE_ID?.trim();
 
   if (name) params.set('name', name);
   if (email) params.set('email', email);
@@ -65,6 +69,9 @@ export function buildSupportPortalUrl(userData: UserData | null): string | null 
   if (uid) params.set('uid', uid);
   if (appcode) params.set('appcode', appcode);
   if (moduleName) params.set('module', moduleName);
+  // The support form matches on `moduleId` first, so send it whenever this
+  // app has one configured.
+  if (moduleId) params.set('moduleId', moduleId);
 
   return `${HELPDESK_URL}?${params.toString()}`;
 }
