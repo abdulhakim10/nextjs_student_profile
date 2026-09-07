@@ -22,7 +22,7 @@ import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 /** hrefs that close a conceptual group — adds a soft gap after */
-const GROUP_END_HREFS = new Set(['/users']);
+const GROUP_END_HREFS = new Set(['/students']);
 
 export function AppSidebar() {
   const pathname = usePathname();

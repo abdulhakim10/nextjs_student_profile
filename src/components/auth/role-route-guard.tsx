@@ -31,6 +31,7 @@ const ADMIN_ROUTE_PREFIXES = [
   '/overview',
   '/dashboard',
   '/users',
+  '/students',
   '/tutorial',
 ];
 

@@ -30,6 +30,8 @@ export const API_CONFIG = {
   VERSION: process.env.NEXT_PUBLIC_API_VERSION || 'v2',
   DEFAULT_APP: process.env.NEXT_PUBLIC_DEFAULT_APP || 'eboss',
   DEFAULT_USER_TYPE: process.env.NEXT_PUBLIC_DEFAULT_USER_TYPE || 'staff',
+  /** App segment for the student APIs (`/api/v2/user/{app}/student/...`). */
+  STUDENT_APP: process.env.NEXT_PUBLIC_STUDENT_APP || 'asis',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,

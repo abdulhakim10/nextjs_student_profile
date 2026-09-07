@@ -23,6 +23,29 @@ export const API_ENDPOINTS = {
     STAFF_FETCH: (app: string = API_CONFIG.DEFAULT_APP) =>
       `/api/${v}/user/${app}/staff/fetch`,
   },
+  STUDENT: {
+    /** POST — paginated student list */
+    LIST: (app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/list`,
+    /** GET — full student profile */
+    DETAIL: (uid: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/${uid}`,
+    /** GET — class list for a branch */
+    CLASS_LIST: (branch: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/classes/${branch}`,
+    /** GET — status code → label list for a branch */
+    STATUS_LIST: (branch: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/status/${branch}`,
+    /** POST — create student. TODO: confirm path with backend team. */
+    CREATE: (app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student`,
+    /** PUT — update student. TODO: confirm path with backend team. */
+    UPDATE: (uid: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/${uid}`,
+    /** DELETE — remove student. TODO: confirm path with backend team. */
+    DELETE: (uid: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/${uid}`,
+  },
   UTILITIES: {
     CALENDAR_EVENTS: (app: string = API_CONFIG.DEFAULT_APP) =>
       `/api/${v}/utilities/${app}/calendar/events`,

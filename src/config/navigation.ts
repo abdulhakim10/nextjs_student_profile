@@ -1,7 +1,7 @@
 import {
   Home,
   LayoutDashboard,
-  Users,
+  GraduationCap,
   Settings,
   BookOpen,
   UserCircle,
@@ -42,9 +42,9 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ['admin'],
   },
   {
-    titleKey: 'users',
-    href: '/users',
-    icon: Users,
+    titleKey: 'students',
+    href: '/students',
+    icon: GraduationCap,
     roles: ['admin'],
   },
   // TEMPLATE: rename to the module's own-data page when forking
