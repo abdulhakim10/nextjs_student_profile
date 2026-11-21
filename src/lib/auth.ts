@@ -51,36 +51,33 @@ import { STORAGE_KEYS, SESSION_KEYS } from '@/config/constants';
 export const AUTH_STORAGE_KEY = 'auth-storage';
 
 // ---------------------------------------------------------------------------
-// Credentials
+// Auth Headers
 // ---------------------------------------------------------------------------
-//
-// The backend credentials (appcode key, bearer token, encrypted user) are NOT
-// stored in the browser. They live in sealed httpOnly cookies that only the
-// Next.js server can read (lib/server/session.ts); /api/proxy and the other
-// API routes attach them server-side. Same-origin fetch/axios send the cookies
-// automatically, so client code attaches nothing.
 
-/** Keys older builds stored credentials under — purged on load and on logout. */
-const LEGACY_CREDENTIAL_KEYS = [
-  STORAGE_KEYS.ENCRYPTED_KEY,
-  STORAGE_KEYS.ACCESS_TOKEN,
-  STORAGE_KEYS.ENCRYPTED_USER,
-] as const;
+/**
+ * Reads auth tokens from localStorage and returns them as HTTP headers.
+ * Used by both Axios interceptor (api-client.ts) and AI service (ai.service.ts).
+ *
+ * @param options.skipEncrypted - If true, omits x-encrypted-key/user headers
+ *                                (used for appcode endpoint which doesn't need them)
+ */
+export function getAuthHeaders(options?: { skipEncrypted?: boolean }): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof window === 'undefined') return headers;
 
-export function purgeLegacyCredentials() {
-  if (typeof window === 'undefined') return;
-  LEGACY_CREDENTIAL_KEYS.forEach((k) => localStorage.removeItem(k));
-}
+  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  const encryptedKey = localStorage.getItem(STORAGE_KEYS.ENCRYPTED_KEY);
+  const encryptedUser = localStorage.getItem(STORAGE_KEYS.ENCRYPTED_USER);
 
-/** Drops the server session cookies (httpOnly — only the server can clear them). */
-function clearServerSession(scope: 'user' | 'all') {
-  if (typeof window === 'undefined') return;
-  // keepalive lets the request finish even if a redirect follows immediately
-  fetch(`/api/session${scope === 'all' ? '?scope=all' : ''}`, {
-    method: 'DELETE',
-    credentials: 'same-origin',
-    keepalive: true,
-  }).catch(() => {});
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (!options?.skipEncrypted) {
+    if (encryptedKey) headers['x-encrypted-key'] = encryptedKey;
+    if (encryptedUser) headers['x-encrypted-user'] = encryptedUser;
+  }
+
+  return headers;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,8 +115,7 @@ export function getLogoutRedirectTarget(): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Clears the login session (server cookie + local keys). Keeps the school
- * (appcode key cookie, server_id)
+ * Clears login-session keys only. Keeps appcode data (encrypted_key, server_id)
  * so the user can re-login without re-entering the organization code.
  *
  * Used by: manual logout (auth.store logout action)
@@ -127,8 +123,8 @@ export function getLogoutRedirectTarget(): string {
 export function clearSessionStorage() {
   if (typeof window === 'undefined') return;
 
-  clearServerSession('user');
-  purgeLegacyCredentials();
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_USER);
   localStorage.removeItem(STORAGE_KEYS.FIREBASE_ID);
   localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
   localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
@@ -146,15 +142,15 @@ export function clearSessionStorage() {
 export function clearAllAuthStorage() {
   if (typeof window === 'undefined') return;
 
-  clearServerSession('all');
-  purgeLegacyCredentials();
-
   // Login keys
+  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_USER);
   localStorage.removeItem(STORAGE_KEYS.FIREBASE_ID);
   localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
   localStorage.removeItem(STORAGE_KEYS.SSO_RETURN_URL);
 
   // Appcode keys
+  localStorage.removeItem(STORAGE_KEYS.ENCRYPTED_KEY);
   localStorage.removeItem(STORAGE_KEYS.SERVER_ID);
 
   // Session state

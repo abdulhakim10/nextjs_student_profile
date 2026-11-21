@@ -15,11 +15,13 @@
  *      the token is consumed by the first successful fetch.
  *   d) Stream them back, never cacheable by a CDN / shared cache.
  *
- * The token and the appcode key never reach the browser.
+ * The viewer's credentials come from the request headers (lib/server/request-auth),
+ * so call it with fetch() + getAuthHeaders() — a plain <img src> / <a href>
+ * can't send them. The file token never reaches the browser.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { API_BASE_URL, API_CONFIG } from '@/config/api';
-import { backendHeaders, readSession, SessionConfigError } from '@/lib/server/session';
+import { backendHeaders, readRequestAuth } from '@/lib/server/request-auth';
 import { FileServerError, FS_BASE, mintFileToken } from '@/lib/server/file-server';
 import { accessFromUrl, fsPair, isFileId, resolveAccess, type FileRecord } from '@/lib/files';
 
@@ -33,7 +35,7 @@ const NO_STORE: Record<string, string> = {
   Pragma: 'no-cache',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
-  Vary: 'Cookie',
+  Vary: 'Authorization, x-encrypted-key, x-encrypted-user',
 };
 
 function fail(status: number, message: string) {
@@ -101,7 +103,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!isFileId(fileId) || !UID_RE.test(studentUid)) return fail(400, 'Bad request');
 
   try {
-    const session = readSession(request);
+    const session = readRequestAuth(request);
     if (!session.appKey || !(session.token || session.encryptedUser)) return fail(401, 'Unauthorized');
 
     // a) authorise: load the record as the viewer
@@ -175,10 +177,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return new NextResponse(upstream.body, { status: 200, headers });
   } catch (err) {
-    if (err instanceof SessionConfigError) {
-      console.error('[files]', err.message);
-      return fail(500, 'Server session is not configured');
-    }
     if (err instanceof FileServerError) return fail(err.status === 404 ? 404 : 502, 'File unavailable');
     console.error('[files]', err);
     return fail(502, 'File unavailable');

@@ -23,7 +23,7 @@
  *   5. AI route executes the tool + continues agentic loop
  */
 
-import { forceLogout } from '@/lib/auth';
+import { getAuthHeaders, forceLogout } from '@/lib/auth';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,16 +62,17 @@ interface AIChatResponse {
 
 /**
  * Wrapper around fetch() that automatically:
- *   1. Sends the session cookie (credentials are never in JS)
+ *   1. Attaches auth headers from localStorage
  *   2. Detects 401 responses and triggers forceLogout()
  *   3. Parses error responses into thrown Error objects
  */
 async function authFetch(body: Record<string, unknown>): Promise<AIChatResponse> {
   const res = await fetch('/api/ai/chat', {
     method: 'POST',
-    // credentials travel in the httpOnly session cookie (same-origin)
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
     body: JSON.stringify(body),
   });
 

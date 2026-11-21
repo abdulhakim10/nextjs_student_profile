@@ -4,11 +4,8 @@
  * ============================================================================
  *
  * Two-step authentication flow:
- *   Step 1: Appcode → validates organization → server keeps the key (httpOnly cookie)
- *   Step 2: Login   → authenticates user     → server keeps the token (httpOnly cookie)
- *
- * The credentials are stripped from these responses by /api/proxy, so the
- * store only ever holds display data (school name/logo, user profile).
+ *   Step 1: Appcode → validates organization → stores encrypted_key + server_id
+ *   Step 2: Login   → authenticates user     → stores access_token + encrypted_user
  *
  * Persistence:
  *   - Zustand persist middleware saves { appcodeData, userData, isAppCodeVerified,
@@ -27,7 +24,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { AppcodeData, UserData } from '@/types';
 import { STORAGE_KEYS } from '@/config/constants';
-import { AUTH_STORAGE_KEY, clearSessionStorage, purgeLegacyCredentials } from '@/lib/auth';
+import { AUTH_STORAGE_KEY, clearSessionStorage } from '@/lib/auth';
 
 interface AuthState {
   // --- Data ---
@@ -68,16 +65,15 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * Step 1: Store appcode validation result.
-       * The key itself never reaches here — the proxy keeps it server-side.
+       * Saves encrypted_key and server_id to localStorage for API header injection.
        */
       setAppcodeData: (data) => {
         if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEYS.ENCRYPTED_KEY, data.encrypted_key);
           localStorage.setItem(STORAGE_KEYS.SERVER_ID, data.server_id);
         }
-        // defensive: never persist a credential even if one slips through
-        const { encrypted_key: _k, ...safe } = data; // eslint-disable-line @typescript-eslint/no-unused-vars
         set({
-          appcodeData: safe,
+          appcodeData: data,
           isAppCodeVerified: true,
           error: null,
         });
@@ -85,10 +81,12 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * Step 2: Store login result.
-       * The token / encrypted_user never reach here — the proxy keeps them server-side.
+       * Saves access_token and encrypted_user to localStorage for API header injection.
        */
       setUserData: (data, firebaseId?: string) => {
         if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.token);
+          localStorage.setItem(STORAGE_KEYS.ENCRYPTED_USER, data.encrypted_user);
           if (firebaseId !== undefined) {
             localStorage.setItem(STORAGE_KEYS.FIREBASE_ID, firebaseId);
           }
@@ -97,8 +95,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY, String(Date.now()));
         }
         // sid is string everywhere internally — coerce in case API returns number
-        const { token: _t, encrypted_user: _u, ...profile } = data; // eslint-disable-line @typescript-eslint/no-unused-vars
-        const normalized: UserData = { ...profile, user_sid: String(data.user_sid ?? '') };
+        const normalized: UserData = { ...data, user_sid: String(data.user_sid ?? '') };
         set({
           userData: normalized,
           isAuthenticated: true,
@@ -112,8 +109,8 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * User-initiated logout (e.g. sidebar menu).
-       * Clears the login session (server cookie included) — keeps the school
-       * so the user can re-login without re-entering the org code.
+       * Clears login-session keys only — keeps appcode data (encrypted_key,
+       * server_id) so the user can re-login without re-entering the org code.
        * Zustand persist auto-syncs the new state to AUTH_STORAGE_KEY.
        */
       logout: () => {
@@ -135,17 +132,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // Older builds kept credentials in localStorage and in this store.
-        // Wipe them; those sessions re-authenticate via the 401 → appcode flow.
-        purgeLegacyCredentials();
-        if (state?.appcodeData && 'encrypted_key' in state.appcodeData) {
-          const { encrypted_key: _k, ...safe } = state.appcodeData; // eslint-disable-line @typescript-eslint/no-unused-vars
-          useAuthStore.setState({ appcodeData: safe });
-        }
-        if (state?.userData && ('token' in state.userData || 'encrypted_user' in state.userData)) {
-          const { token: _t, encrypted_user: _u, ...profile } = state.userData; // eslint-disable-line @typescript-eslint/no-unused-vars
-          useAuthStore.setState({ userData: profile });
-        }
         state?.setHasHydrated(true);
       },
     }

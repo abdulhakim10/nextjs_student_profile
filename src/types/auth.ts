@@ -3,10 +3,7 @@ export interface AppcodeRequest {
 }
 
 export interface AppcodeData {
-  /** Server-side only — stripped by /api/proxy, never present in the browser. */
-  encrypted_key?: string;
-  /** Non-secret org code, read from the key by the proxy (support deep links). */
-  app_code?: string;
+  encrypted_key: string;
   server_id: string;
   sid: string;
   client_appname: string;
@@ -27,10 +24,8 @@ export interface LoginRequest {
 }
 
 export interface UserData {
-  /** Server-side only — stripped by /api/proxy, never present in the browser. */
-  token?: string;
-  /** Server-side only — stripped by /api/proxy, never present in the browser. */
-  encrypted_user?: string;
+  token: string;
+  encrypted_user: string;
   tfa_expired: boolean;
   is_default_password: boolean;
   password_expired_in: string;

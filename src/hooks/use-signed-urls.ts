@@ -19,7 +19,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { fsPair, resolveAccess, type FileRecord } from '@/lib/files';
-import { forceLogout } from '@/lib/auth';
+import { forceLogout, getAuthHeaders } from '@/lib/auth';
 
 const REFRESH_MARGIN_MS = 60_000;
 const MAX_PER_REQUEST = 200;
@@ -66,8 +66,7 @@ async function signMissing(records: FileRecord[]): Promise<boolean> {
     const p = (async () => {
       const res = await fetch('/api/files/sign', {
         method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         // records here were normalised when the key was built, so the pair is valid
         body: JSON.stringify({ files: chunk.map((r) => ({ fileId: r.fileId, fsApp: r.fsApp, fsUser: r.fsUser })) }),
       });

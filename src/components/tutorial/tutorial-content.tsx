@@ -2,17 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Rocket, Users, Sparkles,
-  Lightbulb, Search, BookOpen, ArrowRight,
-  Settings,
+  Rocket, Home, Search, Eye, Pencil, BarChart3, FileSpreadsheet,
+  Lightbulb, BookOpen, ArrowRight,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from '@/i18n';
-import { useAIChatStore } from '@/stores/ai-chat.store';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +31,6 @@ interface Section {
   iconColor: string;
   steps: Step[];
   tip?: { key: string };
-  aiPrompt?: string;
 }
 
 // ─── Section Config ──────────────────────────────────────────────────────────
@@ -51,40 +47,101 @@ const SECTIONS: Section[] = [
     iconColor: 'text-blue-600 dark:text-blue-400',
     steps: [
       { titleKey: 'gs1Title', descKey: 'gs1Desc' },
-      { titleKey: 'gs2Title', descKey: 'gs2Desc', link: '/overview' },
-      { titleKey: 'gs3Title', descKey: 'gs3Desc', link: '/settings' },
+      { titleKey: 'gs2Title', descKey: 'gs2Desc', link: '/students' },
+      { titleKey: 'gs3Title', descKey: 'gs3Desc', link: '/students' },
+      { titleKey: 'gs4Title', descKey: 'gs4Desc', link: '/settings' },
     ],
+    tip: { key: 'gsTip' },
   },
   {
-    id: 'user-management',
+    id: 'overview',
     level: 'basic',
-    titleKey: 'userManagement',
-    descKey: 'userManagementDesc',
-    icon: Users,
+    titleKey: 'overview',
+    descKey: 'overviewDesc',
+    icon: Home,
     iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
     steps: [
-      { titleKey: 'um1Title', descKey: 'um1Desc', link: '/users' },
-      { titleKey: 'um2Title', descKey: 'um2Desc' },
-      { titleKey: 'um3Title', descKey: 'um3Desc' },
+      { titleKey: 'ov1Title', descKey: 'ov1Desc', link: '/overview' },
+      { titleKey: 'ov2Title', descKey: 'ov2Desc' },
+      { titleKey: 'ov3Title', descKey: 'ov3Desc' },
+    ],
+  },
+  {
+    id: 'find-students',
+    level: 'basic',
+    titleKey: 'findStudents',
+    descKey: 'findStudentsDesc',
+    icon: Search,
+    iconBg: 'bg-sky-100 dark:bg-sky-900/40',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    steps: [
+      { titleKey: 'fs1Title', descKey: 'fs1Desc', link: '/students' },
+      { titleKey: 'fs2Title', descKey: 'fs2Desc' },
+      { titleKey: 'fs3Title', descKey: 'fs3Desc' },
+      { titleKey: 'fs4Title', descKey: 'fs4Desc' },
+    ],
+    tip: { key: 'fsTip' },
+  },
+  {
+    id: 'view-student',
+    level: 'basic',
+    titleKey: 'viewStudent',
+    descKey: 'viewStudentDesc',
+    icon: Eye,
+    iconBg: 'bg-teal-100 dark:bg-teal-900/40',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    steps: [
+      { titleKey: 'vs1Title', descKey: 'vs1Desc', link: '/students' },
+      { titleKey: 'vs2Title', descKey: 'vs2Desc' },
+      { titleKey: 'vs3Title', descKey: 'vs3Desc' },
     ],
   },
 
   // ── ADVANCED ───────────────────────────────────────────────────────────────
   {
-    id: 'ai-assistant',
+    id: 'edit-student',
     level: 'advanced',
-    titleKey: 'aiAssistant',
-    descKey: 'aiAssistantDesc',
-    icon: Sparkles,
-    iconBg: 'bg-pink-100 dark:bg-pink-900/40',
-    iconColor: 'text-pink-600 dark:text-pink-400',
+    titleKey: 'editStudent',
+    descKey: 'editStudentDesc',
+    icon: Pencil,
+    iconBg: 'bg-violet-100 dark:bg-violet-900/40',
+    iconColor: 'text-violet-600 dark:text-violet-400',
     steps: [
-      { titleKey: 'ai1Title', descKey: 'ai1Desc' },
-      { titleKey: 'ai2Title', descKey: 'ai2Desc' },
-      { titleKey: 'ai3Title', descKey: 'ai3Desc' },
+      { titleKey: 'es1Title', descKey: 'es1Desc', link: '/students' },
+      { titleKey: 'es2Title', descKey: 'es2Desc' },
+      { titleKey: 'es3Title', descKey: 'es3Desc' },
+      { titleKey: 'es4Title', descKey: 'es4Desc' },
     ],
-    aiPrompt: 'What can you help me with?',
+    tip: { key: 'esTip' },
+  },
+  {
+    id: 'dashboard',
+    level: 'advanced',
+    titleKey: 'analytics',
+    descKey: 'analyticsDesc',
+    icon: BarChart3,
+    iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    steps: [
+      { titleKey: 'an1Title', descKey: 'an1Desc', link: '/dashboard' },
+      { titleKey: 'an2Title', descKey: 'an2Desc' },
+      { titleKey: 'an3Title', descKey: 'an3Desc' },
+    ],
+  },
+  {
+    id: 'export',
+    level: 'advanced',
+    titleKey: 'exportPrint',
+    descKey: 'exportPrintDesc',
+    icon: FileSpreadsheet,
+    iconBg: 'bg-green-100 dark:bg-green-900/40',
+    iconColor: 'text-green-600 dark:text-green-400',
+    steps: [
+      { titleKey: 'ex1Title', descKey: 'ex1Desc', link: '/students' },
+      { titleKey: 'ex2Title', descKey: 'ex2Desc' },
+      { titleKey: 'ex3Title', descKey: 'ex3Desc' },
+    ],
   },
   {
     id: 'tips',
@@ -97,7 +154,7 @@ const SECTIONS: Section[] = [
     steps: [
       { titleKey: 'tp1Title', descKey: 'tp1Desc' },
       { titleKey: 'tp2Title', descKey: 'tp2Desc' },
-      { titleKey: 'tp3Title', descKey: 'tp3Desc', link: '/settings' },
+      { titleKey: 'tp3Title', descKey: 'tp3Desc' },
     ],
   },
 ];
@@ -112,7 +169,6 @@ const LEVEL_COLORS = {
 export function TutorialContent() {
   const { t } = useTranslation('tutorial');
   const router = useRouter();
-  const { setOpen: setAIChatOpen, setPendingPrompt } = useAIChatStore();
   const [search, setSearch] = useState('');
   const [level, setLevel] = useState<Level | 'all'>('basic');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -134,11 +190,6 @@ export function TutorialContent() {
 
   const basicCount = SECTIONS.filter((s) => s.level === 'basic').length;
   const advancedCount = SECTIONS.filter((s) => s.level === 'advanced').length;
-
-  const handleTryAI = (prompt: string) => {
-    setPendingPrompt(prompt);
-    setAIChatOpen(true);
-  };
 
   return (
     <div className="space-y-6">
@@ -233,12 +284,12 @@ export function TutorialContent() {
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className="text-sm font-semibold truncate">{t(section.titleKey)}</p>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${levelColor.badge}`}>
-                        {section.level}
+                        {t(section.level === 'basic' ? 'basicTab' : 'advancedTab')}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2">{t(section.descKey)}</p>
                     <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-muted-foreground/60">
-                      <span>{section.steps.length} steps</span>
+                      <span>{t('stepsCount').replace('{n}', String(section.steps.length))}</span>
                     </div>
                   </div>
                 </button>
@@ -293,25 +344,6 @@ export function TutorialContent() {
                         </motion.div>
                       )}
 
-                      {/* Action buttons */}
-                      {section.aiPrompt && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: section.steps.length * 0.06 + 0.1 }}
-                          className="flex flex-wrap gap-2 pt-1"
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 gap-1.5 text-xs bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 hover:text-primary rounded-lg"
-                            onClick={() => handleTryAI(section.aiPrompt!)}
-                          >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            {t('tryAI')}
-                          </Button>
-                        </motion.div>
-                      )}
                     </div>
                   </motion.div>
                 )}

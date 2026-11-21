@@ -4,8 +4,8 @@
  * ============================================================================
  *
  * Every call here sends the tenant's appcode key (`x-encrypted-key`), which
- * opens every file of that school. It is read from the server session and
- * must never be returned to the browser.
+ * opens every file of that school. It comes from the viewer's request headers
+ * (lib/server/request-auth) and is never echoed back in a response.
  *
  * The version is pinned to /api/v2 on purpose — it does NOT follow
  * NEXT_PUBLIC_API_VERSION.

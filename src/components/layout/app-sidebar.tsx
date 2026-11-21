@@ -45,22 +45,26 @@ export function AppSidebar() {
         >
           {/* Animated brand glow */}
           <span className="pointer-events-none absolute -inset-px -z-0 bg-gradient-to-r from-primary/0 via-primary/8 to-primary/0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-          <div className="relative flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/30 ring-1 ring-inset ring-white/20 transition-transform duration-300 group-hover:scale-[1.04] group-hover:rotate-[-2deg]">
-            {appcodeData?.client_logo ? (
+          {appcodeData?.client_logo ? (
+            // School logo shown as-is — no tile, gradient or shadow behind it
+            <div className="relative flex aspect-square size-9 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-[1.04]">
               <Image
                 src={appcodeData.client_logo}
                 alt="Logo"
-                width={28}
-                height={28}
-                className="rounded object-contain"
+                width={36}
+                height={36}
+                className="max-h-9 max-w-9 object-contain"
                 style={{ width: 'auto', height: 'auto' }}
                 unoptimized
               />
-            ) : (
+            </div>
+          ) : (
+            // No logo: keep the branded tile with an initial
+            <div className="relative flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/30 ring-1 ring-inset ring-white/20 transition-transform duration-300 group-hover:scale-[1.04] group-hover:rotate-[-2deg]">
               <span className="text-sm font-bold tracking-tight">A</span>
-            )}
-            <span className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-white/25 via-white/0 to-white/0" />
-          </div>
+              <span className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-white/25 via-white/0 to-white/0" />
+            </div>
+          )}
           <div className="relative grid flex-1 text-left leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="truncate text-[13.5px] font-semibold tracking-tight">
               {appcodeData?.customer || tSidebar('appName')}

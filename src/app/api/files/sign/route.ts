@@ -15,10 +15,10 @@
  * The full upstream status + body is logged server-side; in development it is
  * also returned as `upstream` so it can be read from the browser's Network tab.
  *
- * The appcode key comes from the server session and never leaves the server.
+ * The viewer's credentials come from the request headers (lib/server/request-auth).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { isSameOriginRequest, readSession, SessionConfigError } from '@/lib/server/session';
+import { isSameOriginRequest, readRequestAuth } from '@/lib/server/request-auth';
 import { FileServerError, SIGN_BATCH_LIMIT, signBatch } from '@/lib/server/file-server';
 import { fsPair, isFileId } from '@/lib/files';
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403, headers: NO_STORE });
   }
   try {
-    const session = readSession(request);
+    const session = readRequestAuth(request);
     // Must be a signed-in viewer of a tenant, not just a selected school.
     if (!session.appKey || !(session.token || session.encryptedUser)) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401, headers: NO_STORE });
@@ -126,10 +126,6 @@ export async function POST(request: NextRequest) {
     const missing = calls.flatMap((c) => c.ids).filter((id) => !data[id]);
     return NextResponse.json({ success: true, data, missing, expiresAt }, { headers: NO_STORE });
   } catch (err) {
-    if (err instanceof SessionConfigError) {
-      console.error('[files/sign]', err.message);
-      return NextResponse.json({ success: false, message: 'Server session is not configured' }, { status: 500, headers: NO_STORE });
-    }
     console.error('[files/sign]', err);
     return NextResponse.json({ success: false, message: 'Could not sign files' }, { status: 500, headers: NO_STORE });
   }

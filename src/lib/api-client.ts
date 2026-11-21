@@ -6,9 +6,10 @@
  * All services (auth, user, dashboard, plus your module's services) use this
  * shared Axios instance. It provides:
  *
- *   Credentials:
- *     None attached client-side — httpOnly session cookies + server-side
- *     injection in /api/proxy (see lib/server/session.ts).
+ *   Request Interceptor:
+ *     Reads auth tokens from localStorage via getAuthHeaders() and attaches
+ *     them to every outgoing request. Skips encrypted headers for the
+ *     appcode endpoint (which only needs the appcode in the body).
  *
  *   Response Interceptor:
  *     Catches 401 Unauthorized responses and triggers forceLogout() to clear
@@ -24,9 +25,9 @@
  */
 
 import axios from 'axios';
-import type { AxiosError } from 'axios';
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '@/config/api';
-import { forceLogout } from '@/lib/auth';
+import { getAuthHeaders, forceLogout } from '@/lib/auth';
 
 const apiClient = axios.create({
   baseURL: API_CONFIG.BASE_URL,
@@ -36,9 +37,22 @@ const apiClient = axios.create({
   },
 });
 
-// Credentials: none are attached here. The sealed httpOnly session cookies
-// ride along automatically (same-origin) and /api/proxy injects the backend
-// headers server-side. See lib/server/session.ts.
+// ---------------------------------------------------------------------------
+// Request Interceptor — Attach auth headers to every outgoing request
+// ---------------------------------------------------------------------------
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const isAppcodeEndpoint = config.url?.includes('/auth/appcode');
+    const headers = getAuthHeaders({ skipEncrypted: isAppcodeEndpoint });
+
+    Object.entries(headers).forEach(([key, value]) => {
+      config.headers[key] = value;
+    });
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // ---------------------------------------------------------------------------
 // Response Interceptor — Handle 401 globally (session expired / invalid token)

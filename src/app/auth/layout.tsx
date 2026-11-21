@@ -25,8 +25,7 @@ export default function AuthLayout({
   // fresh token from the launcher and re-seeds LAST_ACTIVITY. If we bounced
   // SSO arrivals on stale `isAuthenticated: true`, the receiver would land on
   // /overview with stale state and the idle timer would fire immediately.
-  // /auth/handoff (sign-in carried over from the SPS portal) works the same way.
-  const isSSO = pathname.startsWith('/auth/sso') || pathname.startsWith('/auth/handoff');
+  const isSSO = pathname.startsWith('/auth/sso');
 
   useEffect(() => {
     if (!_hasHydrated) return;
