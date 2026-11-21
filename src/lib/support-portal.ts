@@ -12,7 +12,7 @@
  */
 
 import type { UserData } from '@/types';
-import { STORAGE_KEYS } from '@/config/constants';
+import { useAuthStore } from '@/stores/auth.store';
 import { API_CONFIG } from '@/config/api';
 
 const HELPDESK_URL = process.env.NEXT_PUBLIC_SUPPORT_HELPDESK_URL;
@@ -26,25 +26,11 @@ const MODULE_NAME = process.env.NEXT_PUBLIC_MODULE_NAME;
 const MODULE_ID = process.env.NEXT_PUBLIC_MODULE_ID;
 
 /**
- * Decode the `app_code` claim from the encrypted-key JWT in localStorage. The
- * key is a signed JWT whose payload is base64url — readable client-side without
- * the signing secret (we only read a claim, we don't verify). Returns null on
- * any fault so the caller can fall back.
+ * The org code (`app_code` claim of the appcode key). The key itself stays
+ * server-side; /api/proxy copies this one non-secret claim into appcodeData.
  */
 function decodeAppCode(): string | null {
-  if (typeof window === 'undefined') return null;
-  const token = localStorage.getItem(STORAGE_KEYS.ENCRYPTED_KEY);
-  if (!token) return null;
-  const parts = token.split('.');
-  if (parts.length < 2) return null;
-  try {
-    const payload = JSON.parse(
-      atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')),
-    ) as { app_code?: unknown };
-    return typeof payload.app_code === 'string' ? payload.app_code : null;
-  } catch {
-    return null;
-  }
+  return useAuthStore.getState().appcodeData?.app_code ?? null;
 }
 
 /**

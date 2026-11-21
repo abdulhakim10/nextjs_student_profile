@@ -2,6 +2,13 @@
  * API Proxy Route — Routes requests to the correct backend service.
  * Supports JSON and multipart/form-data requests.
  *
+ * Credentials: the browser never holds the backend credentials. Any
+ * Authorization / x-encrypted-* headers sent by the browser are ignored; the
+ * proxy injects them from the sealed httpOnly session cookies
+ * (lib/server/session.ts). Responses from appcode / SSO verify / login are
+ * intercepted: their credentials go into the cookies and are removed from
+ * the JSON before it reaches the browser.
+ *
  * To add a module-specific backend (e.g. attendance, salary), add a key
  * to `ServiceName`, wire its base URL in `SERVICE_BASE_URL`, and add a
  * branch in `classifyPath()`.
@@ -12,6 +19,8 @@ import {
   AUTH_BASE_URL,
   UTILITIES_BASE_URL,
 } from '@/config/api';
+import { backendHeaders, clearUserCookie, isSameOriginRequest, readSession, SessionConfigError } from '@/lib/server/session';
+import { authAction, captureCredentials, PRE_SESSION, type CookieOp } from '@/lib/server/auth-capture';
 
 type ServiceName = 'auth' | 'utilities' | 'api';
 
@@ -20,6 +29,13 @@ const SERVICE_BASE_URL: Record<ServiceName, string> = {
   utilities: UTILITIES_BASE_URL,
   api: API_BASE_URL,
 };
+
+function unauthorized() {
+  return NextResponse.json(
+    { success: false, message: 'Session expired', data: null },
+    { status: 401, headers: { 'Cache-Control': 'no-store' } }
+  );
+}
 
 /** Classifies a path to the backend service that owns it. */
 function classifyPath(path: string): ServiceName {
@@ -85,6 +101,8 @@ async function proxyRequest(
   pathSegments: string[],
   method: string
 ) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+
   try {
     const path = pathSegments.join('/');
     const service = classifyPath(path);
@@ -114,19 +132,21 @@ async function proxyRequest(
       }
     }
 
-    // Forward relevant headers — skip Content-Type for FormData (browser sets boundary)
-    const headers: HeadersInit = {};
+    // Credentials come from the sealed session only — browser-sent
+    // Authorization / x-encrypted-* headers are deliberately ignored.
+    const action = authAction(path);
+    const session = readSession(request);
+    if (!session.appKey && !PRE_SESSION.includes(action)) {
+      return unauthorized();
+    }
+
+    const headers: Record<string, string> = {};
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
-
-    const authHeader = request.headers.get('Authorization');
-    const encryptedKey = request.headers.get('x-encrypted-key');
-    const encryptedUser = request.headers.get('x-encrypted-user');
-
-    if (authHeader) headers['Authorization'] = authHeader;
-    if (encryptedKey) headers['x-encrypted-key'] = encryptedKey;
-    if (encryptedUser) headers['x-encrypted-user'] = encryptedUser;
+    if (!PRE_SESSION.includes(action)) {
+      Object.assign(headers, backendHeaders(session));
+    }
 
     console.log(`[Proxy] ${method} ${url} (${service})`);
 
@@ -136,17 +156,32 @@ async function proxyRequest(
       body: body || undefined,
     });
 
-    const data = await response.text();
+    let data = await response.text();
 
     if (!response.ok) {
       console.error(`[Proxy] ${method} ${url} → ${response.status}`, data.substring(0, 500));
     }
 
-    return new NextResponse(data, {
+    const cookieOps: CookieOp[] = [];
+    if (action === 'appcode' || action === 'sso-verify' || action === 'login') {
+      data = captureCredentials(action, data, cookieOps);
+    }
+    if (action === 'logout') cookieOps.push(clearUserCookie);
+
+    const out = new NextResponse(data, {
       status: response.status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(action ? { 'Cache-Control': 'no-store' } : {}),
+      },
     });
+    cookieOps.forEach((op) => op(out));
+    return out;
   } catch (error) {
+    if (error instanceof SessionConfigError) {
+      console.error('[Proxy] Session misconfigured:', error.message);
+      return NextResponse.json({ success: false, message: 'Server session is not configured' }, { status: 500 });
+    }
     console.error('[Proxy] Error:', error);
     return NextResponse.json(
       {

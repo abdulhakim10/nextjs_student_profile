@@ -360,7 +360,11 @@ export function AddressBlock({
   return (
     <div className="space-y-5">
       {title && <h4 className="text-base font-semibold">{title}</h4>}
+      {/* 3 × 3 with no holes: street lines span 2; selects keep their dependency order */}
       <Grid cols={3}>
+        <TextField name={`${prefix}.line1`} label={t('line1')} register={register} className="sm:col-span-2" />
+        <TextField name={`${prefix}.postcode`} label={t('postcode')} register={register} inputMode="numeric" />
+        <TextField name={`${prefix}.line2`} label={t('line2')} register={register} className="sm:col-span-2" />
         <SelectField
           name={`${prefix}.country`}
           label={t('country')}
@@ -392,9 +396,6 @@ export function AddressBlock({
           placeholder={t('selectDistrict')}
           disabled={!state || districtsLoading}
         />
-        <TextField name={`${prefix}.line1`} label={t('line1')} register={register} />
-        <TextField name={`${prefix}.line2`} label={t('line2')} register={register} />
-        <TextField name={`${prefix}.postcode`} label={t('postcode')} register={register} inputMode="numeric" />
       </Grid>
     </div>
   );

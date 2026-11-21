@@ -4,9 +4,8 @@ import type {
   StudentGuardian,
   StudentFormPayload,
   StudentVaccineInfo,
-  YesNo,
 } from '@/types';
-import { EMPTY_ADDRESS, isEmptyDate } from './student-helpers';
+import { EMPTY_ADDRESS, genderCode, isEmptyDate, parseVaccine, schoolName } from './student-helpers';
 
 export const FLAG_KEYS = [
   'international',
@@ -56,6 +55,7 @@ export interface StudentFormValues {
   className: string;
   classCode: string;
   academicYear: string;
+  educationLevel: string;
   status: string;
   registerDate: string;
   endDate: string;
@@ -78,6 +78,7 @@ export interface StudentFormValues {
     parentPhone: string;
     email: string;
     nationality: string;
+    bloodType: string;
     transportation: string;
     illnessAllergic: string;
     previousSchool: string;
@@ -100,7 +101,19 @@ export interface StudentFormValues {
   };
   siblings: SiblingValues[];
   vaccine: StudentVaccineInfo;
+  /**
+   * Client-specific fields from the details API's `customFields`, keyed
+   * customFieldKey(section, name) — saved via PUT /profile/custom-fields.
+   */
+  customFields: Record<string, string>;
 }
+
+/** Form key for a custom field. "::" because react-hook-form splits paths on "." */
+export const customFieldKey = (section: string, name: string) => `${section}::${name}`;
+export const parseCustomFieldKey = (key: string) => {
+  const i = key.indexOf('::');
+  return { section: key.slice(0, i), name: key.slice(i + 2) };
+};
 
 export type AddressPrefix =
   | 'personal.address'
@@ -134,7 +147,6 @@ const clean = (v: string | number | null | undefined): string => {
 /** Date inputs need yyyy-MM-dd; the legacy API uses 0000-00-00 for "none". */
 const cleanDate = (v: string | null | undefined): string => (isEmptyDate(v) ? '' : clean(v));
 
-const yesNo = (v: unknown): YesNo => (v === 'yes' || v === 'no' ? v : '');
 
 function toAddress(a?: Partial<StudentAddress> | null): StudentAddress {
   return {
@@ -196,10 +208,11 @@ export function toFormValues(s?: StudentDetail | null): StudentFormValues {
     name: clean(s?.name),
     ic: clean(s?.ic),
     matric: clean(s?.matric),
-    course: clean(s?.course),
+    course: schoolName(s),
     className: clean(s?.className),
     classCode: clean(s?.classCode),
-    academicYear: clean(s?.academicYear),
+    academicYear: clean(s?.academicYear ?? s?.registration?.academicYear),
+    educationLevel: clean(s?.educationLevel ?? s?.registration?.educationLevel),
     status: s?.status !== undefined && s?.status !== null ? String(s.status) : '6',
     registerDate: cleanDate(s?.registerDate),
     endDate: cleanDate(s?.endDate),
@@ -212,7 +225,8 @@ export function toFormValues(s?: StudentDetail | null): StudentFormValues {
     visaNo: clean(s?.visaNo),
     visaExpiry: cleanDate(s?.visaExpiry),
     personal: {
-      gender: clean(s?.personal?.gender),
+      // form select uses "1"/"0"; newer responses send "male"/"female"
+      gender: { M: '1', F: '0', '-': '' }[genderCode(s?.personal?.gender)],
       race: clean(s?.personal?.race),
       religion: clean(s?.personal?.religion),
       birthCertNo: clean(s?.personal?.birthCertNo),
@@ -222,10 +236,11 @@ export function toFormValues(s?: StudentDetail | null): StudentFormValues {
       parentPhone: clean(s?.personal?.parentPhone),
       email: clean(s?.personal?.email),
       nationality: clean(s?.personal?.nationality),
+      bloodType: clean(s?.personal?.bloodType),
       transportation: clean(s?.personal?.transportation),
       illnessAllergic: clean(s?.personal?.illnessAllergic),
       previousSchool: clean(s?.personal?.previousSchool),
-      otherInfo: clean(s?.personal?.otherInfo),
+      otherInfo: clean(s?.personal?.otherInfo ?? s?.otherInfo),
       address: toAddress(s?.personal?.address),
       flags,
     },
@@ -243,15 +258,10 @@ export function toFormValues(s?: StudentDetail | null): StudentFormValues {
       address: toAddress(s?.emergencyContact?.address),
     },
     siblings: siblings.length ? siblings : [{ ...EMPTY_SIBLING }],
-    vaccine: {
-      ...EMPTY_VACCINE,
-      ...(s?.vaccine ?? {}),
-      mySejahtera: yesNo(s?.vaccine?.mySejahtera),
-      vaccinated: yesNo(s?.vaccine?.vaccinated),
-      dose1: yesNo(s?.vaccine?.dose1),
-      dose2: yesNo(s?.vaccine?.dose2),
-      booster: yesNo(s?.vaccine?.booster),
-    },
+    vaccine: { ...EMPTY_VACCINE, ...parseVaccine(s?.vaccine) },
+    customFields: Object.fromEntries(
+      (s?.customFields ?? []).map((f) => [customFieldKey(f.section, f.name), clean(f.value as string | number | null)])
+    ),
   };
 }
 

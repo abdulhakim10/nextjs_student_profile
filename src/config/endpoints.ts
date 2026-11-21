@@ -27,21 +27,44 @@ export const API_ENDPOINTS = {
     /** POST — paginated student list */
     LIST: (app: string = API_CONFIG.STUDENT_APP) =>
       `/api/${v}/user/${app}/student/list`,
-    /** GET — full student profile */
+    /**
+     * GET — full student profile: stu + registration + every custom field
+     * (superset of the original GET /student/{uid}).
+     */
     DETAIL: (uid: string, app: string = API_CONFIG.STUDENT_APP) =>
-      `/api/${v}/user/${app}/student/${uid}`,
+      `/api/${v}/user/${app}/student/profile/${encodeURIComponent(uid)}`,
+    /** GET — session-year dropdown for a branch, with its current session */
+    SESSIONS: (branch: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/sessions/${encodeURIComponent(branch)}`,
     /** GET — class list for a branch */
     CLASS_LIST: (branch: string, app: string = API_CONFIG.STUDENT_APP) =>
       `/api/${v}/user/${app}/student/classes/${branch}`,
+    /** GET — education level list for a branch */
+    LEVEL_LIST: (branch: string, app: string = API_CONFIG.STUDENT_APP) =>
+      `/api/${v}/user/${app}/student/levels/${branch}`,
     /** GET — status code → label list for a branch */
     STATUS_LIST: (branch: string, app: string = API_CONFIG.STUDENT_APP) =>
       `/api/${v}/user/${app}/student/status/${branch}`,
     /** POST — create student. TODO: confirm path with backend team. */
     CREATE: (app: string = API_CONFIG.STUDENT_APP) =>
       `/api/${v}/user/${app}/student`,
-    /** PUT — update student. TODO: confirm path with backend team. */
-    UPDATE: (uid: string, app: string = API_CONFIG.STUDENT_APP) =>
-      `/api/${v}/user/${app}/student/${uid}`,
+    /**
+     * PUT — section-by-section profile updates ("Student Profile" in
+     * https://api02.awfatech.com/docs/user). Each takes `uid` in the body.
+     * `main` is multipart (admin fields + flags + profileImage); the rest JSON.
+     */
+    PROFILE: {
+      MAIN: (app: string = API_CONFIG.STUDENT_APP) => `/api/${v}/user/${app}/student/profile`,
+      PERSONAL: (app: string = API_CONFIG.STUDENT_APP) => `/api/${v}/user/${app}/student/profile/personal`,
+      ADDRESS: (app: string = API_CONFIG.STUDENT_APP) => `/api/${v}/user/${app}/student/profile/address`,
+      FATHER: (app: string = API_CONFIG.STUDENT_APP) => `/api/${v}/user/${app}/student/profile/father`,
+      MOTHER: (app: string = API_CONFIG.STUDENT_APP) => `/api/${v}/user/${app}/student/profile/mother`,
+      EMERGENCY_CONTACT: (app: string = API_CONFIG.STUDENT_APP) =>
+        `/api/${v}/user/${app}/student/profile/emergency-contact`,
+      SIBLINGS: (app: string = API_CONFIG.STUDENT_APP) => `/api/${v}/user/${app}/student/profile/siblings`,
+      CUSTOM_FIELDS: (app: string = API_CONFIG.STUDENT_APP) =>
+        `/api/${v}/user/${app}/student/profile/custom-fields`,
+    },
     /** DELETE — remove student. TODO: confirm path with backend team. */
     DELETE: (uid: string, app: string = API_CONFIG.STUDENT_APP) =>
       `/api/${v}/user/${app}/student/${uid}`,

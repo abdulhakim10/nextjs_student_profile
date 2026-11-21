@@ -3,6 +3,8 @@ import type { StudentListItem } from '@/types';
 
 export interface StudentFilters {
   branch: string;
+  /** Session year for class/level filters and class names; '' = branch's current session */
+  sessionYear: string;
   search: string;
   status: string;
   academicYear: string;
@@ -29,6 +31,7 @@ export const DEFAULT_STUDENT_STATUS = '6';
 
 export const EMPTY_STUDENT_FILTERS: StudentFilters = {
   branch: '',
+  sessionYear: '',
   search: '',
   status: DEFAULT_STUDENT_STATUS,
   academicYear: '',

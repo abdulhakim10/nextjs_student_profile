@@ -18,7 +18,7 @@ import { ModuleTransition } from '@/components/layout/module-transition';
 
 function mapAppcodeData(data: SSOVerifyData): AppcodeData {
   return {
-    encrypted_key: data.encrypted_key,
+    app_code: data.app_code,
     server_id: data.server_id,
     sid: data.sid,
     client_appname: data.client_appname,
@@ -32,8 +32,6 @@ function mapAppcodeData(data: SSOVerifyData): AppcodeData {
 
 function mapUserData(data: SSOVerifyData): UserData {
   return {
-    token: data.token,
-    encrypted_user: data.encrypted_user,
     tfa_expired: false,
     is_default_password: false,
     password_expired_in: '',

@@ -12,6 +12,8 @@ interface BranchPillProps {
   isHQ?: boolean;
   branchName?: string;
   onDistrictFilter?: (district?: string) => void;
+  allowAll?: boolean;
+  isAll?: boolean;
 }
 
 /** Glass branch pill — matches the rest of the module's header chrome.

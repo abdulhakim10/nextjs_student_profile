@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useBranchSelector } from '@/hooks/use-branch-selector';
 import { useStudentStore, DEFAULT_STUDENT_STATUS, type StudentSortField } from '@/stores/student.store';
 import { studentService } from '@/services/student.service';
@@ -12,6 +12,7 @@ import { exportToExcel } from '@/lib/export-excel';
 import { printTable } from '@/lib/print-table';
 import { PageHeader } from '@/components/shared/page-header';
 import { BranchPill } from '@/components/shared/branch-pill';
+import { SessionPill } from '@/components/shared/session-pill';
 import { DataPagination } from '@/components/shared/data-pagination';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -50,12 +51,16 @@ import {
   displayValue,
   genderCode,
   initials,
+  isBlank,
   isEmptyDate,
   statusTone,
   STATUS_TONE_CLASS,
 } from '@/components/students/student-helpers';
+import { useStudentPhotos } from '@/components/students/use-student-photos';
 import { useStudentStatuses } from '@/components/students/use-student-statuses';
 import { useStudentClasses } from '@/components/students/use-student-classes';
+import { useStudentLevels } from '@/components/students/use-student-levels';
+import { useStudentSessions } from '@/components/students/use-student-sessions';
 import type { StudentDetail, StudentListItem } from '@/types';
 import {
   GraduationCap,
@@ -121,9 +126,11 @@ export default function StudentsPage() {
     setSelectedSid,
     loadingBranches,
     isHQ,
+    isAll,
+    allowAll,
     branchName,
     fetchBranches,
-  } = useBranchSelector();
+  } = useBranchSelector({ allowAll: true });
 
   useEffect(() => {
     if (selectedSid !== filters.branch) setFilters({ branch: selectedSid });
@@ -135,22 +142,11 @@ export default function StudentsPage() {
   // ── Class options for the selected branch ──
   const { classes, loading: classesLoading } = useStudentClasses(selectedSid);
 
-  // ── Level options ──
-  // No lookup API yet, so levels accumulate from rows seen for the current branch.
-  const [levelOptions, setLevelOptions] = useState<Set<number>>(new Set());
+  // ── Level options for the selected branch ──
+  const { levels, loading: levelsLoading } = useStudentLevels(selectedSid);
 
-  useEffect(() => {
-    setLevelOptions(new Set());
-  }, [selectedSid]);
-
-  useEffect(() => {
-    if (dataset.length === 0) return;
-    setLevelOptions((prev) => {
-      const next = new Set(prev);
-      for (const s of dataset) if (s.educationLevel) next.add(s.educationLevel);
-      return next.size === prev.size ? prev : next;
-    });
-  }, [dataset]);
+  // ── Session years for the selected branch ('' = its current session) ──
+  const { sessions, loading: sessionsLoading } = useStudentSessions(selectedSid);
 
   // ── Search (debounced) ──
   const [searchValue, setSearchValue] = useState(filters.search);
@@ -164,9 +160,13 @@ export default function StudentsPage() {
   const hasActiveFilters =
     filters.search !== '' ||
     filters.status !== DEFAULT_STUDENT_STATUS ||
+    filters.sessionYear !== '' ||
     filters.academicYear !== '' ||
     filters.educationClass !== '' ||
     filters.educationLevel !== '';
+
+  // ── Photos: one signing request for the whole page ──
+  const photoSrc = useStudentPhotos(dataset.map((s) => s.fileProfile));
 
   // ── Data fetch ──
   const fetchData = useCallback(async () => {
@@ -177,6 +177,7 @@ export default function StudentsPage() {
         branch: filters.branch,
         search: filters.search,
         educationClass: filters.educationClass,
+        sessionYear: filters.sessionYear,
         status: filters.status,
         academicYear: filters.academicYear,
         educationLevel: filters.educationLevel,
@@ -270,8 +271,10 @@ export default function StudentsPage() {
       className: s.className || '',
       academicYear: s.academicYear ?? '',
       father: s.father?.name ?? '',
+      fatherIc: s.father?.ic ?? '',
       fatherPhone: s.father?.phone ?? '',
       mother: s.mother?.name ?? '',
+      motherIc: s.mother?.ic ?? '',
       motherPhone: s.mother?.phone ?? '',
       birthDate: fmtDate(s.birthDate),
       registerDate: fmtDate(s.registerDate),
@@ -288,8 +291,10 @@ export default function StudentsPage() {
     { header: t('className'), key: 'className' as const, width: 18 },
     { header: t('academicYear'), key: 'academicYear' as const, width: 8 },
     { header: t('fatherInfo'), key: 'father' as const, width: 28 },
+    { header: `${t('fatherInfo')} ${t('ic')}`, key: 'fatherIc' as const, width: 16 },
     { header: `${t('fatherInfo')} ${t('phone')}`, key: 'fatherPhone' as const, width: 14 },
     { header: t('motherInfo'), key: 'mother' as const, width: 28 },
+    { header: `${t('motherInfo')} ${t('ic')}`, key: 'motherIc' as const, width: 16 },
     { header: `${t('motherInfo')} ${t('phone')}`, key: 'motherPhone' as const, width: 14 },
     { header: t('birthDate'), key: 'birthDate' as const, width: 12 },
     { header: t('registerDate'), key: 'registerDate' as const, width: 12 },
@@ -308,8 +313,9 @@ export default function StudentsPage() {
       title: t('title'),
       subtitle: t('printSubtitle'),
       meta: [
-        { label: t('branch'), value: branchName || selectedSid || '-' },
+        { label: t('branch'), value: isAll ? t('allBranches') : branchName || selectedSid || '-' },
         { label: t('status'), value: statusLabel },
+        { label: t('sessionYear'), value: filters.sessionYear || sessions?.currentLabel || '-' },
         { label: t('academicYear'), value: filters.academicYear || t('allYears') },
         { label: t('educationClass'), value: className },
         { label: t('records'), value: String(selectedRows().length) },
@@ -320,8 +326,8 @@ export default function StudentsPage() {
         { header: t('matric'), value: (s) => s.matric ?? '' },
         { header: t('colGender'), value: (s) => genderCode(s.gender), align: 'center', width: '40px' },
         { header: t('className'), value: (s) => `${s.className || '-'}\n${t('intake')} ${s.academicYear ?? ''}` },
-        { header: t('fatherInfo'), value: (s) => `${s.father?.name ?? ''}\n${s.father?.phone ?? ''}` },
-        { header: t('motherInfo'), value: (s) => `${s.mother?.name ?? ''}\n${s.mother?.phone ?? ''}` },
+        { header: t('fatherInfo'), value: (s) => [s.father?.name, s.father?.ic, s.father?.phone].filter((x) => !isBlank(x)).join('\n') },
+        { header: t('motherInfo'), value: (s) => [s.mother?.name, s.mother?.ic, s.mother?.phone].filter((x) => !isBlank(x)).join('\n') },
         { header: t('birthDate'), value: (s) => fmtDate(s.birthDate) },
         { header: t('registerDate'), value: (s) => fmtDate(s.registerDate) },
         { header: t('endDate'), value: (s) => fmtDate(s.endDate) },
@@ -338,10 +344,6 @@ export default function StudentsPage() {
   const toSelectValue = (v: string) => (v === '' ? ALL : v);
   const fromSelectValue = (v: string) => (v === ALL ? '' : v);
 
-  const sortedLevelOptions = useMemo(
-    () => Array.from(levelOptions).sort((a, b) => a - b),
-    [levelOptions]
-  );
 
   return (
     <div className="space-y-6">
@@ -359,6 +361,16 @@ export default function StudentsPage() {
           isHQ={isHQ}
           branchName={branchName}
           onDistrictFilter={(d) => fetchBranches(d)}
+          allowAll={allowAll}
+          isAll={isAll}
+        />
+        <SessionPill
+          sessions={sessions}
+          value={filters.sessionYear}
+          onChange={(v) => setFilters({ sessionYear: v })}
+          loading={sessionsLoading}
+          label={t('sessionYear')}
+          currentLabel={t('currentSession')}
         />
       </PageHeader>
 
@@ -439,21 +451,18 @@ export default function StudentsPage() {
         <Select
           value={toSelectValue(filters.educationLevel)}
           onValueChange={(v) => setFilters({ educationLevel: fromSelectValue(v) })}
+          disabled={levelsLoading}
         >
-          <SelectTrigger className="h-10 w-[140px] rounded-xl" aria-label={t('educationLevel')}>
+          <SelectTrigger className="h-10 w-[160px] rounded-xl" aria-label={t('educationLevel')}>
             <SelectValue placeholder={t('educationLevel')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>{t('allLevels')}</SelectItem>
-            {sortedLevelOptions.map((lvl) => (
-              <SelectItem key={lvl} value={String(lvl)}>
-                {t('levelLabel').replace('{n}', String(lvl))}
-              </SelectItem>
+            {levels.map((lvl) => (
+              <SelectItem key={lvl.educationLevel} value={lvl.educationLevel}>{lvl.educationLevelName}</SelectItem>
             ))}
-            {filters.educationLevel !== '' && !levelOptions.has(Number(filters.educationLevel)) && (
-              <SelectItem value={filters.educationLevel}>
-                {t('levelLabel').replace('{n}', filters.educationLevel)}
-              </SelectItem>
+            {filters.educationLevel !== '' && !levels.some((l) => l.educationLevel === filters.educationLevel) && (
+              <SelectItem value={filters.educationLevel}>{filters.educationLevel}</SelectItem>
             )}
           </SelectContent>
         </Select>
@@ -598,7 +607,7 @@ export default function StudentsPage() {
                       <div className="flex items-start gap-3">
                         <div className="relative shrink-0">
                           <Avatar className="h-10 w-10 rounded-full ring-2 ring-background">
-                            <AvatarImage src={s.fileProfile || undefined} alt={name} />
+                            <AvatarImage src={photoSrc(s.fileProfile)} alt={name} className="object-cover" />
                             <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
                               {initials(s.name)}
                             </AvatarFallback>
@@ -666,7 +675,19 @@ export default function StudentsPage() {
                             <p className={cn('truncate font-semibold', color)} title={person?.name ?? undefined}>
                               {displayValue(person?.name)}
                             </p>
-                            <p className="truncate font-medium">{displayValue(person?.phone)}</p>
+                            {/* IC · phone — whichever the record has */}
+                            {(() => {
+                              const parts = [
+                                isBlank(person?.ic) ? null : `${t('ic')} ${String(person?.ic).trim()}`,
+                                isBlank(person?.phone) ? null : String(person?.phone).trim(),
+                              ].filter(Boolean) as string[];
+                              const text = parts.length ? parts.join(' · ') : '-';
+                              return (
+                                <p className="truncate font-medium text-muted-foreground" title={text}>
+                                  {text}
+                                </p>
+                              );
+                            })()}
                           </div>
                         ))}
                       </div>

@@ -5,7 +5,9 @@ import { STORAGE_KEYS } from '@/config/constants';
 import type { ApiResponse, AppcodeData, LoginRequest, UserData } from '@/types';
 
 export interface SSOVerifyData {
-  encrypted_key: string;
+  /** stripped by /api/proxy */
+  encrypted_key?: string;
+  app_code?: string;
   server_id: string;
   sid: string;
   client_appname: string;
@@ -14,8 +16,10 @@ export interface SSOVerifyData {
   url: string;
   bos_config: string;
   app_config: string;
-  token: string;
-  encrypted_user: string;
+  /** stripped by /api/proxy */
+  token?: string;
+  /** stripped by /api/proxy */
+  encrypted_user?: string;
   user_id: string;
   user_sid: number;
   user_name: string;

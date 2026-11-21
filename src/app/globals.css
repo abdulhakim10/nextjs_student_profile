@@ -884,3 +884,14 @@
 .animate-toast-icon-shake {
   animation: toast-icon-shake 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
 }
+
+/* ── Data-viz series colors (validated categorical slots 1–2; dark steps
+   chosen for the dark surface, not an automatic flip) ─────────────────── */
+:root {
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+}
+.dark {
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+}

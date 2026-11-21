@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronsUpDown, Building2, Loader2, MapPin, ChevronDown, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Building2, Loader2, MapPin, ChevronDown, X, Network } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -31,6 +31,10 @@ interface BranchSelectorProps {
   size?: 'compact' | 'default';
   /** Called when district filter changes — parent should re-fetch branches */
   onDistrictFilter?: (district?: string) => void;
+  /** Offer an "All branches" entry (selects sid ''). */
+  allowAll?: boolean;
+  /** True while "All branches" is the selection. */
+  isAll?: boolean;
 }
 
 const triggerStyles = {
@@ -291,14 +295,17 @@ export function BranchSelector({
   branchName,
   size = 'compact',
   onDistrictFilter,
+  allowAll = false,
+  isAll = false,
 }: BranchSelectorProps) {
   const { t } = useTranslation('dashboard');
   const [open, setOpen] = useState(false);
 
   const selectedLabel = useMemo(() => {
+    if (allowAll && isAll) return t('allBranches');
     if (branchName) return branchName;
     return branches.find((b) => b.sid === selectedSid)?.name || '';
-  }, [branches, selectedSid, branchName]);
+  }, [branches, selectedSid, branchName, allowAll, isAll, t]);
 
   const handleDistrictChange = useCallback((district?: string) => {
     onDistrictFilter?.(district);
@@ -350,8 +357,23 @@ export function BranchSelector({
               )}
             </CommandEmpty>
             <CommandGroup>
+              {allowAll && (
+                <CommandItem
+                  // cmdk filters on `value`; keep it searchable as "all"
+                  value={`__all__ ${t('allBranches')}`}
+                  onSelect={() => {
+                    onBranchChange('');
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Network className={cn('h-3.5 w-3.5 shrink-0', isAll ? 'text-primary' : 'text-muted-foreground/50')} />
+                  <span className={cn('flex-1 text-sm', isAll && 'font-semibold')}>{t('allBranches')}</span>
+                  {isAll && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                </CommandItem>
+              )}
               {branches.map((b) => {
-                const isActive = selectedSid === b.sid;
+                const isActive = !isAll && selectedSid === b.sid;
                 return (
                   <CommandItem
                     key={b.sid}

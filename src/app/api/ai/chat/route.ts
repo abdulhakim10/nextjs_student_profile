@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { backendHeaders, isSameOriginRequest, readSession } from '@/lib/server/session';
 import Anthropic from '@anthropic-ai/sdk';
 import { AI_TOOLS, WRITE_TOOLS } from '@/lib/ai/tools';
 import { buildSystemPrompt, buildCompactSystemPrompt } from '@/lib/ai/system-prompt';
@@ -111,15 +112,9 @@ function getAnthropicClient(): Anthropic {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Backend credentials come from the sealed session cookies, never from browser headers. */
 function getAuthHeaders(request: NextRequest): AuthHeaders {
-  const headers: AuthHeaders = {};
-  const auth = request.headers.get('authorization');
-  const encryptedKey = request.headers.get('x-encrypted-key');
-  const encryptedUser = request.headers.get('x-encrypted-user');
-  if (auth) headers['Authorization'] = auth;
-  if (encryptedKey) headers['x-encrypted-key'] = encryptedKey;
-  if (encryptedUser) headers['x-encrypted-user'] = encryptedUser;
-  return headers;
+  return backendHeaders(readSession(request)) as AuthHeaders;
 }
 
 function buildHeaders(authHeaders: AuthHeaders): Record<string, string> {
@@ -311,6 +306,9 @@ async function executeBatch(
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
   }

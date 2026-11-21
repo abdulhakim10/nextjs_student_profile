@@ -8,7 +8,10 @@ import type {
   StudentFormPayload,
   StudentStatusItem,
   StudentClassItem,
+  StudentLevelResponse,
+  StudentSessions,
 } from '@/types';
+import type { ProfileSection } from '@/components/students/student-profile-sections';
 
 export const studentService = {
   /**
@@ -23,6 +26,7 @@ export const studentService = {
       ic: '',
       registrationDate: '',
       endDate: '',
+      sessionYear: '',
       educationClass: '',
       status: '',
       academicYear: '',
@@ -40,10 +44,24 @@ export const studentService = {
     return response.data;
   },
 
-  /** Student detail — GET /api/v2/user/{app}/student/{uid} */
+  /** Student detail — GET /api/v2/user/{app}/student/profile/{uid} */
   getDetail: async (uid: string) => {
     const response = await apiClient.get<ApiResponse<StudentDetail>>(
       API_ENDPOINTS.STUDENT.DETAIL(uid)
+    );
+    return response.data;
+  },
+
+  /** Session years — GET /api/v2/user/{app}/student/sessions/{branch} */
+  getSessions: async (branch: string) => {
+    const response = await apiClient.get<ApiResponse<StudentSessions>>(API_ENDPOINTS.STUDENT.SESSIONS(branch));
+    return response.data;
+  },
+
+  /** Level list — GET /api/v2/user/{app}/student/levels/{branch} */
+  getLevelList: async (branch: string) => {
+    const response = await apiClient.get<ApiResponse<StudentLevelResponse>>(
+      API_ENDPOINTS.STUDENT.LEVEL_LIST(branch)
     );
     return response.data;
   },
@@ -73,12 +91,29 @@ export const studentService = {
     return response.data;
   },
 
-  /** Update student — PUT /api/v2/user/{app}/student/{uid} (endpoint to be confirmed) */
-  update: async (uid: string, data: StudentFormPayload) => {
-    const response = await apiClient.put<ApiResponse<StudentDetail>>(
-      API_ENDPOINTS.STUDENT.UPDATE(uid),
-      data
-    );
+  /**
+   * Section updates — PUT /api/v2/user/{app}/student/profile[/section].
+   * Build bodies with student-profile-sections.ts; each includes `uid`.
+   */
+  updateProfileMain: async (form: FormData) => {
+    const response = await apiClient.put<ApiResponse<unknown>>(API_ENDPOINTS.STUDENT.PROFILE.MAIN(), form, {
+      // let the browser set the multipart boundary
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  updateProfileSection: async (section: Exclude<ProfileSection, 'main'>, body: object) => {
+    const url = {
+      personal: API_ENDPOINTS.STUDENT.PROFILE.PERSONAL(),
+      address: API_ENDPOINTS.STUDENT.PROFILE.ADDRESS(),
+      father: API_ENDPOINTS.STUDENT.PROFILE.FATHER(),
+      mother: API_ENDPOINTS.STUDENT.PROFILE.MOTHER(),
+      emergencyContact: API_ENDPOINTS.STUDENT.PROFILE.EMERGENCY_CONTACT(),
+      siblings: API_ENDPOINTS.STUDENT.PROFILE.SIBLINGS(),
+      customFields: API_ENDPOINTS.STUDENT.PROFILE.CUSTOM_FIELDS(),
+    }[section];
+    const response = await apiClient.put<ApiResponse<unknown>>(url, body);
     return response.data;
   },
 

@@ -16,10 +16,19 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { useTranslation } from '@/i18n';
 import { studentService } from '@/services/student.service';
 import { toast } from '@/lib/toast';
+import { isAxiosError } from 'axios';
 import { cn } from '@/lib/utils';
 import type { StudentDetail } from '@/types';
-import { initials, statusTone, STATUS_TONE_CLASS } from './student-helpers';
+import { initials, schoolName, statusTone, STATUS_TONE_CLASS } from './student-helpers';
+import { useStudentPhotos } from './use-student-photos';
 import { toFormValues, toPayload, type StudentFormValues } from './student-form-types';
+import {
+  acceptSection,
+  buildMainForm,
+  buildSectionBody,
+  changedSections,
+  type ProfileSection,
+} from './student-profile-sections';
 import { useStudentStatuses } from './use-student-statuses';
 import {
   AdministrationTab,
@@ -27,7 +36,7 @@ import {
   GuardianTab,
   SiblingsTab,
   EmergencyTab,
-  VaccineTab,
+  CustomFieldsTab,
 } from './student-form-tabs';
 import {
   X,
@@ -37,13 +46,14 @@ import {
   UserRound,
   Users,
   Phone,
-  Syringe,
+  ListPlus,
   Loader2,
   Upload,
   type LucideIcon,
 } from 'lucide-react';
 
-type TabKey = 'administration' | 'student' | 'father' | 'mother' | 'siblings' | 'emergency' | 'vaccine';
+// Vaccine isn't saveable by the profile API, so it has no edit tab (still shown in the view).
+type TabKey = 'administration' | 'student' | 'father' | 'mother' | 'siblings' | 'emergency' | 'custom';
 
 type TabLabelKey =
   | 'administration'
@@ -52,7 +62,7 @@ type TabLabelKey =
   | 'motherInfo'
   | 'siblingsInfo'
   | 'emergencyContact'
-  | 'vaccine';
+  | 'otherInformation';
 
 const TABS: { key: TabKey; icon: LucideIcon; labelKey: TabLabelKey }[] = [
   { key: 'administration', icon: Settings2, labelKey: 'administration' },
@@ -61,7 +71,7 @@ const TABS: { key: TabKey; icon: LucideIcon; labelKey: TabLabelKey }[] = [
   { key: 'mother', icon: UserRound, labelKey: 'motherInfo' },
   { key: 'siblings', icon: Users, labelKey: 'siblingsInfo' },
   { key: 'emergency', icon: Phone, labelKey: 'emergencyContact' },
-  { key: 'vaccine', icon: Syringe, labelKey: 'vaccine' },
+  { key: 'custom', icon: ListPlus, labelKey: 'otherInformation' },
 ];
 
 /** Which tab owns each top-level field — used to jump to the first validation error. */
@@ -76,7 +86,7 @@ const FIELD_TAB: Record<string, TabKey> = {
   mother: 'mother',
   siblings: 'siblings',
   emergencyContact: 'emergency',
-  vaccine: 'vaccine',
+  customFields: 'custom',
 };
 
 /** Delete is hidden for now; flip to true to show the footer button again. */
@@ -112,6 +122,9 @@ export function StudentFormDialog({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  /** Values as last loaded/saved — the diff against it decides which sections to send. */
+  const baselineRef = useRef<StudentFormValues | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<StudentFormValues>({ defaultValues: toFormValues(null) });
@@ -124,15 +137,18 @@ export function StudentFormDialog({
     if (!open) return;
     setTab('administration');
     setImagePreview(null);
+    setImageFile(null);
 
     if (mode === 'create') {
       setLoaded(null);
+      baselineRef.current = null;
       reset(toFormValues(null));
       return;
     }
     if (initialData) {
       setLoaded(null);
-      reset(toFormValues(initialData));
+      baselineRef.current = toFormValues(initialData);
+      reset(baselineRef.current);
       return;
     }
     if (!uid) return;
@@ -145,7 +161,8 @@ export function StudentFormDialog({
         if (cancelled) return;
         if (res.success && res.data) {
           setLoaded(res.data);
-          reset(toFormValues(res.data));
+          baselineRef.current = toFormValues(res.data);
+          reset(baselineRef.current);
         } else {
           toast.error(t('detailLoadFailed'));
         }
@@ -161,21 +178,89 @@ export function StudentFormDialog({
     };
   }, [open, mode, uid, initialData, reset, t]);
 
+  /** Readable reason from an API error (message + field errors). */
+  const errorText = (err: unknown): string => {
+    if (isAxiosError(err)) {
+      const data = err.response?.data as { message?: string; errors?: Array<{ message?: string }> } | undefined;
+      const details = (data?.errors ?? []).map((e) => e.message).filter(Boolean).join('; ');
+      return [data?.message, details].filter(Boolean).join(' — ') || err.message;
+    }
+    return err instanceof Error ? err.message : String(err);
+  };
+
+  const SECTION_LABEL: Record<ProfileSection, Parameters<typeof t>[0]> = {
+    main: 'administration',
+    personal: 'studentInfo',
+    address: 'billingAddress',
+    father: 'fatherInfo',
+    mother: 'motherInfo',
+    emergencyContact: 'emergencyContact',
+    siblings: 'siblingsInfo',
+    customFields: 'otherInformation',
+  };
+
+  /** Edit: send only the changed sections, one endpoint each, in order. */
+  const saveSections = async (values: StudentFormValues, uid: string) => {
+    let baseline = baselineRef.current ?? toFormValues(student);
+    const sections = changedSections(baseline, values, Boolean(imageFile));
+    if (!sections.length) {
+      toast.info(t('noChanges'));
+      onOpenChange(false);
+      return;
+    }
+
+    const failed: Array<{ section: ProfileSection; reason: string }> = [];
+    let savedAny = false;
+    // sequential: `main` can change branch / IC that later sections are checked against
+    for (const section of sections) {
+      try {
+        const res =
+          section === 'main'
+            ? await studentService.updateProfileMain(buildMainForm(uid, values, imageFile, baseline))
+            : await studentService.updateProfileSection(
+                section,
+                buildSectionBody(section, uid, values, {
+                  originalGender: student?.personal?.gender,
+                  baselineCustomFields: baseline.customFields,
+                })
+              );
+        if (res && res.success === false) throw new Error(res.message);
+        baseline = acceptSection(baseline, values, section);
+        if (section === 'main') setImageFile(null);
+        savedAny = true;
+      } catch (err) {
+        failed.push({ section, reason: errorText(err) });
+      }
+    }
+    baselineRef.current = baseline;
+
+    if (savedAny) onSaved();
+    if (!failed.length) {
+      toast.success(t('saved'));
+      onOpenChange(false);
+      return;
+    }
+    // keep the dialog open; the next Save re-sends only what failed
+    toast.error(
+      t('saveFailedSections').replace('{sections}', failed.map((f) => t(SECTION_LABEL[f.section])).join(', ')),
+      { description: failed.map((f) => `${t(SECTION_LABEL[f.section])}: ${f.reason}`).join('\n') }
+    );
+  };
+
   const onSubmit = async (values: StudentFormValues) => {
+    if (mode === 'edit' && targetUid) {
+      await saveSections(values, targetUid);
+      return;
+    }
     try {
-      const payload = toPayload(values, targetUid ?? undefined);
-      const res =
-        mode === 'edit' && targetUid
-          ? await studentService.update(targetUid, payload)
-          : await studentService.create(payload);
+      // Create still uses the single create endpoint (not part of the profile API)
+      const res = await studentService.create(toPayload(values));
       if (!res.success) throw new Error(res.message);
       toast.success(t('saved'));
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      toast.error(t('saveFailed'), {
-        description: err instanceof Error ? err.message : undefined,
-      });
+      toast.error(t('saveFailed'), { description: errorText(err) });
     }
   };
 
@@ -207,14 +292,17 @@ export function StudentFormDialog({
 
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
+  const photoSrc = useStudentPhotos([student?.fileProfile]);
   const watchedName = watch('name');
   const watchedStatus = watch('status');
   const watchedBranch = watch('branch');
   const displayName = watchedName || student?.name || t('createTitle');
-  const avatarSrc = imagePreview ?? student?.fileProfile ?? undefined;
+  const avatarSrc = imagePreview ?? photoSrc(student?.fileProfile, student?.schLogo);
   const systemNo = student?.systemNo || targetUid || '';
 
   const { statuses, labelFor } = useStudentStatuses(watchedBranch || (student ? String(student.branch) : undefined));
@@ -226,7 +314,7 @@ export function StudentFormDialog({
     mother: () => <GuardianTab form={form} prefix="mother" title={t('motherInfo')} />,
     siblings: () => <SiblingsTab form={form} />,
     emergency: () => <EmergencyTab form={form} />,
-    vaccine: () => <VaccineTab form={form} />,
+    custom: () => <CustomFieldsTab form={form} fields={student?.customFields ?? []} />,
   };
 
   return (
@@ -265,7 +353,7 @@ export function StudentFormDialog({
           </div>
 
           {/* ── Tabs ─────────────────────────────────────────────────── */}
-          <nav className="flex shrink-0 items-stretch border-b border-border/60 bg-muted/20">
+          <nav className="grid shrink-0 grid-cols-7 border-b border-border/60 bg-muted/20">
             {TABS.map(({ key, icon: Icon, labelKey }) => {
               const active = tab === key;
               return (
@@ -274,7 +362,7 @@ export function StudentFormDialog({
                   type="button"
                   onClick={() => setTab(key)}
                   className={cn(
-                    'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2.5 text-center text-[11px] font-medium leading-tight transition-colors sm:text-xs lg:flex-row lg:gap-2 lg:text-sm',
+                    'relative flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2.5 text-center text-[11px] font-medium leading-tight transition-colors sm:text-xs xl:flex-row xl:gap-2 xl:text-sm',
                     active ? 'bg-card text-primary' : 'text-muted-foreground hover:bg-card/60 hover:text-foreground'
                   )}
                 >
@@ -313,8 +401,8 @@ export function StudentFormDialog({
                 {student?.matric && (
                   <p><span className="text-muted-foreground">{t('matric')}:</span> {student.matric}</p>
                 )}
-                {student?.course && (
-                  <p><span className="text-muted-foreground">{t('course')}:</span> {student.course}</p>
+                {schoolName(student) && (
+                  <p><span className="text-muted-foreground">{t('school')}:</span> {schoolName(student)}</p>
                 )}
               </div>
 
